@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: "Skapi"
-  text: "Instant Serverless Backend\nfor Kotlin and Android"
+  text: "Instant Serverless Backend\nfor Kotlin, Android and Java"
   tagline: "Everything your app needs from a backend, without managing servers or infrastructure."
 
   actions:
@@ -15,12 +15,12 @@ hero:
       link: https://www.skapi.com
   image:
     src: /sk-kotlin-sdk.svg
-    alt: Skapi logo with the Kotlin logo
+    alt: Skapi logo with the Kotlin and Java logos
 
 features:
   - title: Android Apps and the JVM
     icon: 📱
-    details: One library for Android apps, Kotlin servers, desktop programs and command line tools. Suspend functions, plain JSON, no server to deploy.
+    details: One library for Android apps, Kotlin and Java servers, desktop programs and command line tools. Suspend functions in Kotlin, CompletableFuture in Java, no server to deploy.
     link: /introduction/getting-started
   - title: Build with your AI Agents
     icon: 🤖

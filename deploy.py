@@ -8,7 +8,7 @@ DIST = './.vitepress/dist'
 # folder of 4 characters or fewer is never a project's subdomain (registration needs at
 # least 5), so the host stack's s3_notification keeps no file rows for it.
 HOST_BUCKET = 's3://host-storage-us-east-1-136564153953-us31-host'
-SITE = 'py'
+SITE = 'jvm'
 BUCKET = f'{HOST_BUCKET}/{SITE}'
 # The host CDN (*.skapi.com). It serves every hosted site: invalidate /docs/* only.
 DISTRIBUTION = 'E1SPNIMHK9FF60'

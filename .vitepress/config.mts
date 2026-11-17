@@ -2,10 +2,11 @@ import { defineConfig } from 'vitepress'
 
 // skapi-kotlin documentation: the Skapi API for Kotlin and Android. The same page set as
 // docs-skapi-py (accounts, sign-in, database, files, users, realtime, API bridge, tickets), with
-// Kotlin names, plus an Android page and a page listing the skapi-js features left out.
+// Kotlin names, plus an Android page, a Java page (skapi-java) and a page listing the skapi-js
+// features left out.
 export default defineConfig({
   title: 'Skapi for Kotlin',
-  description: 'skapi-kotlin: the Skapi backend for Kotlin and Android. Sign users in and use your project database.',
+  description: 'Skapi backend for Kotlin, Android and Java. Sign users in and use your project database.',
   lang: 'en-US',
   cleanUrls: false,
   lastUpdated: false,
@@ -16,7 +17,7 @@ export default defineConfig({
   ],
   themeConfig: {
     logo: '/logo.png',
-    siteTitle: 'skapi-kotlin',
+    siteTitle: 'Skapi Kotlin',
     search: { provider: 'local' },
     nav: [
       { text: 'Getting Started', link: '/introduction/getting-started' },
@@ -30,6 +31,7 @@ export default defineConfig({
         items: [
           { text: 'Getting Started', link: '/introduction/getting-started' },
           { text: 'Android', link: '/introduction/android' },
+          { text: 'Using from Java', link: '/introduction/java' },
           { text: 'Errors', link: '/introduction/errors' },
           { text: 'Not Included', link: '/introduction/not-included' },
           { text: 'Version History', link: '/versionlog/versions' },
@@ -105,8 +107,8 @@ export default defineConfig({
         ],
       },
     ],
-    socialLinks: [{ icon: 'github', link: 'https://github.com/broadwayinc' }],
-    footer: { message: 'skapi-kotlin 2.4.0', copyright: 'broadway Inc.' },
+    socialLinks: [{ icon: 'github', link: 'https://github.com/broadwayinc/skapi-kotlin' }],
+    footer: { message: 'skapi-kotlin 2.4.1', copyright: 'broadway Inc.' },
   },
   vite: {
     server: {

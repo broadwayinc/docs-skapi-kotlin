@@ -1,8 +1,10 @@
 # Fetching Records
 
-[getRecords](/api-reference/database#getrecords) reads records. It takes a query and optional fetch options, and returns a `JsonObject`:
+[getRecords](/api-reference/database#getrecords) reads records. It takes a query and optional fetch options, and returns a `JsonObject` (a `Map<String, Object>` in Java):
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -18,6 +20,28 @@ for (item in result["list"]!!.jsonArray) {
     println("${record["record_id"]!!.jsonPrimitive.content} ${record["data"]}")
 }
 ```
+
+```java [Java]
+import com.skapi.java.FetchOptionsBuilder;
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.List;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> result = skapi.getRecords(
+    SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public")),
+    new FetchOptionsBuilder().limit(20).build()
+).get();
+
+for (Object item : (List<?>) result.get("list")) {
+    Map<?, ?> record = (Map<?, ?>) item;
+    System.out.println(record.get("record_id") + " " + record.get("data"));
+}
+```
+
+:::
 
 ```json
 {
@@ -110,7 +134,7 @@ skapi.getRecords(jsonOf(
 
 ## Paging
 
-The second argument, `FetchOptions`, controls paging:
+The second argument, `FetchOptions`, controls paging. In Java, build it with `new FetchOptionsBuilder().limit(100).fetchMore(true).build()`.
 
 | property | |
 |---|---|
@@ -119,7 +143,9 @@ The second argument, `FetchOptions`, controls paging:
 | `ascending` | `true` (default) or `false` for the reverse order. |
 | `startKey` | Start from this key, taken from an earlier result (`result["startKey"]`). `JsonPrimitive("start")` starts over. |
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val query = jsonOf("table" to jsonOf("name" to "posts", "access_group" to "public"))
 
 var page = skapi.getRecords(query, FetchOptions(limit = 100))
@@ -130,6 +156,20 @@ while (!page["endOfList"]!!.jsonPrimitive.boolean) {
     handle(page["list"]!!.jsonArray)
 }
 ```
+
+```java [Java]
+Map<String, Object> query = SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public"));
+
+Map<String, Object> page = skapi.getRecords(query, new FetchOptionsBuilder().limit(100).build()).get();
+handle((List<?>) page.get("list"));
+
+while (!Boolean.TRUE.equals(page.get("endOfList"))) {
+    page = skapi.getRecords(query, new FetchOptionsBuilder().limit(100).fetchMore(true).build()).get();
+    handle((List<?>) page.get("list"));
+}
+```
+
+:::
 
 `endOfList` is `true` on the last page, and `startKey` is then `"end"`. Asking for more after that returns an empty list. Fetch only what you need instead of walking a whole table.
 

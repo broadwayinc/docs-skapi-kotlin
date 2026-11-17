@@ -1,8 +1,10 @@
 # Creating Records
 
-[postRecord](/api-reference/database#postrecord) creates a record, or [updates one](/database/update-delete) when the config has a `record_id`. It returns the saved record as a `JsonObject` (see [The record](/database/fetch#the-record)).
+[postRecord](/api-reference/database#postrecord) creates a record, or [updates one](/database/update-delete) when the config has a `record_id`. It returns the saved record as a `JsonObject` (a `Map<String, Object>` in Java, see [The record](/database/fetch#the-record)).
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -16,9 +18,26 @@ println(record["record_id"]!!.jsonPrimitive.content)
 println(record["data"]!!.jsonObject["title"]!!.jsonPrimitive.content)
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> record = skapi.postRecord(
+    SkapiJson.obj("title", "Hello", "body", "My first post"),                     // data
+    SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public")) // config
+).get();
+System.out.println(record.get("record_id"));
+System.out.println(((Map<?, ?>) record.get("data")).get("title"));
+```
+
+:::
+
 ## data
 
-`data` is any JSON value (a `JsonElement`): an object, an array, a string, a number, a boolean, or `JsonNull`.
+`data` is any JSON value (a `JsonElement`): an object, an array, a string, a number, a boolean, or `JsonNull`. In Java it is a `Map`, a `List`, a `String`, a number, a `Boolean` or `null` (see [JSON as maps and lists](/introduction/java#json-as-maps-and-lists)).
 
 - **Left out**, the stored data is kept. This only matters on an update: `skapi.postRecord(config)`, the overload without `data`.
 - **`JsonNull`** (or `null`) stores `null`.
@@ -97,7 +116,9 @@ See [References](/database/reference).
 
 [postRecords](/api-reference/database#postrecords) takes a list of `{"data", "config"}` items and saves them 100 to a request. A thousand rows are ten requests instead of a thousand.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val result = skapi.postRecords(rows.map { row ->
     jsonOf("data" to row, "config" to jsonOf("table" to jsonOf("name" to "imports", "access_group" to "public")))
 })
@@ -108,6 +129,22 @@ for (f in result["failed"]!!.jsonArray) {
     println("${failed["index"]} ${failed["code"]} ${failed["message"]}")
 }
 ```
+
+```java [Java]
+List<Map<String, Object>> items = new ArrayList<>();
+for (Map<String, Object> row : rows) {
+    items.add(SkapiJson.obj("data", row, "config", SkapiJson.obj("table", SkapiJson.obj("name", "imports", "access_group", "public"))));
+}
+Map<String, Object> result = skapi.postRecords(items).get();
+
+System.out.println(((List<?>) result.get("list")).size() + " saved");
+for (Object f : (List<?>) result.get("failed")) {
+    Map<?, ?> failed = (Map<?, ?>) f;
+    System.out.println(failed.get("index") + " " + failed.get("code") + " " + failed.get("message"));
+}
+```
+
+:::
 
 ```json
 {

@@ -1,6 +1,8 @@
 # API Reference
 
-Every method of skapi-kotlin 2.4.0. Each one throws [`SkapiException`](/introduction/errors) on failure. Methods that talk to the server are `suspend` functions that run on `Dispatchers.IO`.
+Every method of skapi-kotlin 2.4.1. Each one throws [`SkapiException`](/introduction/errors) on failure. Methods that talk to the server are `suspend` functions that run on `Dispatchers.IO`.
+
+From Java, every method below has the same name on `SkapiJava` and returns a `CompletableFuture`. See [Using from Java](/introduction/java).
 
 ## [Connection](/api-reference/connection)
 

@@ -1,15 +1,18 @@
 # Getting Started
 
-skapi-kotlin is the Skapi API for Kotlin. It signs users in, keeps their sessions, and reads and writes your project's database, with the same queries, answers and error codes as [skapi-js](https://docs.skapi.com) and skapi-py. Use it in Android apps, Kotlin servers, desktop programs and command line tools.
+skapi-kotlin is the Skapi API for Kotlin and Java. It signs users in, keeps their sessions, and reads and writes your project's database, with the same queries, answers and error codes as [skapi-js](https://docs.skapi.com) and skapi-py. Use it in Android apps, Kotlin and Java servers, desktop programs and command line tools.
 
-It comes in two parts:
+It comes in three parts:
 
 - **skapi-kotlin**: the library itself. Plain JVM code that runs anywhere Kotlin runs, Android included.
 - **skapi-android**: small helpers for Android apps: a session store in SharedPreferences sealed by the Android Keystore, a device key store for record encryption, and lifecycle hooks. See [Android](/introduction/android).
+- **skapi-java**: the same methods for Java code, each returning a `CompletableFuture`, with plain Java maps and lists for JSON. See [Using from Java](/introduction/java).
+
+The examples on the starter pages have a **Kotlin** and a **Java** tab. The other pages show Kotlin; [Using from Java](/introduction/java#reading-the-rest-of-these-docs) explains how to read them from Java.
 
 ## Requirements
 
-- Kotlin on a JVM 8 or later, or an Android app with `minSdk 24` (Android 7.0) or later.
+- Kotlin or Java on a JVM 8 or later, or an Android app with `minSdk 24` (Android 7.0) or later.
 - A Skapi project. Create one on [skapi.com](https://www.skapi.com) and copy its **Project ID** from the project's **Settings** page.
 
 skapi-kotlin brings in `kotlinx-coroutines-core`, `kotlinx-serialization-json` and OkHttp. You do not need the kotlinx serialization compiler plugin: the SDK only uses the JSON classes (`JsonObject`, `JsonElement`), which work without it.
@@ -18,14 +21,29 @@ skapi-kotlin brings in `kotlinx-coroutines-core`, `kotlinx-serialization-json` a
 
 In your module's `build.gradle.kts`:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 dependencies {
-    implementation("com.skapi:skapi-kotlin:2.4.0")
+    implementation("com.skapi:skapi-kotlin:2.4.1")
 
     // Android apps, also:
-    implementation("com.skapi:skapi-android:2.4.0")
+    implementation("com.skapi:skapi-android:2.4.1")
 }
 ```
+
+```kotlin [Java]
+dependencies {
+    implementation("com.skapi:skapi-java:2.4.1")
+
+    // Android apps, also:
+    implementation("com.skapi:skapi-android:2.4.1")
+}
+```
+
+:::
+
+skapi-java includes skapi-kotlin. For Maven, see [Using from Java](/introduction/java#install).
 
 An Android app needs the `INTERNET` permission in `AndroidManifest.xml`:
 
@@ -39,7 +57,9 @@ skapi-android already declares `INTERNET` and `ACCESS_NETWORK_STATE`, and Gradle
 
 ## Connect to your project
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.jsonPrimitive
@@ -52,11 +72,31 @@ fun main() = runBlocking {
 }
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJava;
+import java.util.Map;
+
+public class Main {
+    public static void main(String[] args) throws Exception {
+        try (SkapiJava skapi = new SkapiJava("<Project ID>")) {
+            Map<String, Object> info = skapi.getConnectionInfo().get();
+            System.out.println(info.get("service_name"));  // your project's name
+        }
+    }
+}
+```
+
+:::
+
 One `Skapi` object works with one project. It connects on its first call, not when it is created. Every method that talks to the server is a `suspend` function, so call it from a coroutine: `runBlocking` in a JVM `main`, `lifecycleScope` or `viewModelScope` on Android.
+
+In Java, `SkapiJava` is the same object with the same methods. Each one returns a `CompletableFuture`: `get()` waits for the answer, `thenAccept(...)` runs code when it arrives. See [How calls work](/introduction/java#how-calls-work).
 
 ## Your first records
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 import com.skapi.jsonOf
@@ -87,9 +127,45 @@ fun main() = runBlocking {
 }
 ```
 
-On Android, the same calls go in a coroutine tied to the screen:
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.List;
+import java.util.Map;
 
-```kotlin
+public class Main {
+    public static void main(String[] args) throws Exception {
+        try (SkapiJava skapi = new SkapiJava("<Project ID>")) {
+            // sign in (create the account first with skapi.signup(), see Signing Up Users)
+            skapi.login("user@example.com", "password").get();
+
+            // write a record
+            Map<String, Object> record = skapi.postRecord(
+                SkapiJson.obj("title", "Hello", "body", "My first record"),
+                SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public"))
+            ).get();
+            System.out.println(record.get("record_id"));
+
+            // read records back
+            Map<String, Object> result = skapi.getRecords(
+                SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public"))
+            ).get();
+            for (Object item : (List<?>) result.get("list")) {
+                Map<?, ?> data = (Map<?, ?>) ((Map<?, ?>) item).get("data");
+                System.out.println(data.get("title"));
+            }
+        }
+    }
+}
+```
+
+:::
+
+On Android, the same calls go in a coroutine tied to the screen (in Java, a callback that moves back to the main thread):
+
+::: code-group
+
+```kotlin [Kotlin]
 class PostsActivity : AppCompatActivity() {
     private val skapi get() = (application as App).skapi
 
@@ -107,7 +183,24 @@ class PostsActivity : AppCompatActivity() {
 }
 ```
 
-The request itself runs on `Dispatchers.IO`, so calling it from the main thread does not block the screen. See [Android](/introduction/android) for the `App` class that holds the `Skapi` object.
+```java [Java]
+public class PostsActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        SkapiJava skapi = ((App) getApplication()).skapi;
+        skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public")))
+             .whenComplete((result, err) -> runOnUiThread(() -> {
+                 if (err == null) showPosts((List<?>) result.get("list"));  // back on the main thread here
+                 else showError(err.getMessage());
+             }));
+    }
+}
+```
+
+:::
+
+The request itself runs on `Dispatchers.IO`, so calling it from the main thread does not block the screen. In Java, never call `get()` on the main thread: it waits for the server and freezes the screen. See [Android](/introduction/android) for the `App` class that holds the `Skapi` object.
 
 ## Names in Kotlin
 

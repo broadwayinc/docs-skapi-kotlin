@@ -19,7 +19,9 @@ Pass `files` to [postRecord](/api-reference/database#postrecord): a list of `Fil
 | `filename` | The stored file name. |
 | `contentType` | Defaults to a guess from the file name. |
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 import java.io.File
@@ -37,6 +39,32 @@ val rec = skapi.postRecord(
 )
 ```
 
+```java [Java]
+import com.skapi.FileUpload;
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Arrays;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> rec = skapi.postRecord(
+    SkapiJson.obj("caption", "Holiday"),
+    SkapiJson.obj("table", SkapiJson.obj("name", "photos", "access_group", "authorized")),
+    Arrays.asList(
+        FileUpload.fromFile("picture", new File("beach.jpg"), null, null),
+        FileUpload.fromBytes("picture", pngBytes, "sunset.png", null),
+        FileUpload.fromStream("document", new FileInputStream("trip.pdf"), "trip.pdf", null)
+    )
+).get();
+```
+
+:::
+
+In Java, the factories take every argument: pass `null` for a `filename` or `contentType` you leave to the default.
+
 The files are read and checked before the record is created, so a bad entry throws `INVALID_PARAMETER` and nothing is saved. A file storage refuses afterwards does not fail `postRecord`; use [uploadFiles](#adding-files-to-an-existing-record) when you need to know about each file.
 
 To attach files to an existing record of yours without changing anything else, use `postRecord(jsonOf("record_id" to ...), files = listOf(...))` or `uploadFiles`.
@@ -45,12 +73,23 @@ To attach files to an existing record of yours without changing anything else, u
 
 [uploadFiles](/api-reference/database#uploadfiles) takes the same list and a record ID, and reports on each file:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val result = skapi.uploadFiles(
     listOf(FileUpload.fromFile("picture", File("more.jpg"))),
     "<record id>",
 )
 ```
+
+```java [Java]
+Map<String, Object> result = skapi.uploadFiles(
+    Arrays.asList(FileUpload.fromFile("picture", new File("more.jpg"), null, null)),
+    "<record id>"
+).get();
+```
+
+:::
 
 ```json
 {
