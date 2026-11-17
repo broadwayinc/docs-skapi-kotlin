@@ -8,7 +8,7 @@ It comes in three parts:
 - **skapi-android**: small helpers for Android apps: a session store in SharedPreferences sealed by the Android Keystore, a device key store for record encryption, and lifecycle hooks. See [Android](/introduction/android).
 - **skapi-java**: the same methods for Java code, each returning a `CompletableFuture`, with plain Java maps and lists for JSON. See [Using from Java](/introduction/java).
 
-The examples on the starter pages have a **Kotlin** and a **Java** tab. The other pages show Kotlin; [Using from Java](/introduction/java#reading-the-rest-of-these-docs) explains how to read them from Java.
+Every code example in these docs has a **Kotlin** and a **Java** tab. The text around the examples uses the Kotlin names; [Using from Java](/introduction/java#reading-the-rest-of-these-docs) explains how to read them from Java.
 
 ## Requirements
 
@@ -226,7 +226,9 @@ Data goes in and comes out as JSON values from kotlinx.serialization: `JsonObjec
 
 Build values with the helpers in `com.skapi`:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.jsonArrayOf
 import com.skapi.jsonOf
 import com.skapi.toJsString
@@ -243,6 +245,27 @@ val data = mapOf("title" to "Hello", "views" to 0, "draft" to false).toJsonEleme
 println(config.toJsString())  // {"table":{"name":"posts","access_group":"public"},"tags":["news","kotlin"]}
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJson;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+Map<String, Object> config = SkapiJson.obj(
+    "table", SkapiJson.obj("name", "posts", "access_group", "public"),
+    "tags", SkapiJson.list("news", "java")
+);
+
+// a Map or List you already have is passed as it is
+Map<String, Object> data = new LinkedHashMap<>();
+data.put("title", "Hello");
+data.put("views", 0);
+data.put("draft", false);
+
+System.out.println(SkapiJson.stringify(config));  // {"table":{"name":"posts","access_group":"public"},"tags":["news","java"]}
+```
+
+:::
+
 | helper | |
 |---|---|
 | `jsonOf("key" to value, ...)` | a `JsonObject` from pairs |
@@ -254,7 +277,9 @@ Values inside `jsonOf` and `jsonArrayOf` follow the same rules as `toJsonElement
 
 Read answers with kotlinx's accessors:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import kotlinx.serialization.json.*
 
 val user = skapi.login("user@example.com", "password")
@@ -266,13 +291,30 @@ val records = page["list"]!!.jsonArray
 val endOfList = page["endOfList"]!!.jsonPrimitive.boolean
 ```
 
+```java [Java]
+import java.util.List;
+import java.util.Map;
+
+Map<String, Object> user = skapi.login("user@example.com", "password").get();
+String email = (String) user.get("email");
+boolean verified = Boolean.TRUE.equals(user.get("email_verified"));
+
+Map<String, Object> page = skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public"))).get();
+List<Object> records = (List<Object>) page.get("list");
+boolean endOfList = Boolean.TRUE.equals(page.get("endOfList"));
+```
+
+:::
+
 Whole numbers come back as integers (read them with `.long` or `.int`), the way skapi-js sees them. To store `null` as a record's data, pass `JsonNull`.
 
 ## Keeping users signed in between runs
 
 By default the session lives as long as the `Skapi` object (`MemoryStorage`). To stay signed in when the program or app starts again, give `storage` a place to keep it:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.FileStorage
 import com.skapi.Skapi
 
@@ -282,6 +324,19 @@ if (skapi.getProfile() == null) {  // restores the saved sign-in, if there is on
     skapi.login("user@example.com", "password")
 }
 ```
+
+```java [Java]
+import com.skapi.FileStorage;
+import com.skapi.java.SkapiJava;
+
+SkapiJava skapi = new SkapiJava("<Project ID>", new FileStorage("~/.myapp/skapi-session.json"));
+
+if (skapi.getProfile().get() == null) {  // restores the saved sign-in, if there is one
+    skapi.login("user@example.com", "password").get();
+}
+```
+
+:::
 
 | storage | where | |
 |---|---|---|
@@ -293,7 +348,9 @@ The saved session is read on the first call that needs it. [`skapi.user`](/api-r
 
 To keep sessions anywhere else, for example in your own database, implement `SkapiStorage`:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.SkapiStorage
 
 class MyStorage(private val db: MyKeyValueDb) : SkapiStorage {
@@ -305,11 +362,31 @@ class MyStorage(private val db: MyKeyValueDb) : SkapiStorage {
 val skapi = Skapi("<Project ID>", storage = MyStorage(db))
 ```
 
+```java [Java]
+import com.skapi.SkapiStorage;
+
+public class MyStorage implements SkapiStorage {
+    private final MyKeyValueDb db;
+
+    public MyStorage(MyKeyValueDb db) { this.db = db; }
+
+    @Override public String getItem(String key) { return db.get(key); }
+    @Override public void setItem(String key, String value) { db.put(key, value); }
+    @Override public void removeItem(String key) { db.delete(key); }
+}
+
+SkapiJava skapi = new SkapiJava("<Project ID>", new MyStorage(db));
+```
+
+:::
+
 The three methods are plain (not `suspend`), are called on background threads, and may be called from more than one thread at once. Keys and values are strings: the same keys skapi-js keeps in `localStorage`.
 
 ## Options
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 Skapi(
     projectId: String,
     storage: SkapiStorage = MemoryStorage(),
@@ -318,6 +395,18 @@ Skapi(
     encryption: EncryptionOptions? = null,
 )
 ```
+
+```java [Java]
+new SkapiJava(
+    String projectId,
+    SkapiStorage storage,          // new MemoryStorage() when left out
+    long timeoutSeconds,           // 120
+    String targetCdn,              // null
+    EncryptionOptions encryption   // null
+)
+```
+
+:::
 
 | option | default | what it does |
 |---|---|---|

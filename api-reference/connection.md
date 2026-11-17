@@ -2,7 +2,9 @@
 
 ## Skapi
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 
 val skapi = Skapi(
@@ -13,6 +15,21 @@ val skapi = Skapi(
     encryption: EncryptionOptions? = null,
 )
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+
+SkapiJava skapi = new SkapiJava(
+    String projectId,
+    SkapiStorage storage,          // default new MemoryStorage()
+    long timeoutSeconds,           // default 120
+    String targetCdn,              // default null
+    EncryptionOptions encryption   // default null
+);
+// leave out arguments from the right: new SkapiJava("<Project ID>")
+```
+
+:::
 
 | argument | |
 |---|---|
@@ -45,9 +62,18 @@ The constructor is a plain (not `suspend`) call and sends nothing. The object co
 
 ## getConnectionInfo
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getConnectionInfo(refresh: Boolean = false): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getConnectionInfo(boolean refresh)
+// also getConnectionInfo()
+```
+
+:::
 
 The project's name and settings, and the caller as the server sees it. `refresh = true` asks the server again instead of using the answer from the first call.
 
@@ -68,31 +94,57 @@ The project's name and settings, and the caller as the server sees it. `refresh 
 
 ## onForeground
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 fun onForeground()
 ```
+
+```java [Java]
+void onForeground()
+```
+
+:::
 
 Call when the app comes back to the foreground, as skapi-js does on the browser's `visibilitychange`. A [temporary account](/authentication/anonymous) is checked with the server at once (unless it was confirmed in the last minute) and signed out if it was deleted, and the [realtime connection](/realtime/connecting) is pinged, or reopened now if it dropped. Returns at once; the work runs in the background. skapi-android's [`SkapiLifecycle`](/introduction/android#coming-back-to-the-foreground) calls it for you.
 
 ## onNetworkAvailable
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 fun onNetworkAvailable()
 ```
+
+```java [Java]
+void onNetworkAvailable()
+```
+
+:::
 
 Call when the network comes back, as skapi-js does on the browser's `online` event. The same checks as [onForeground](#onforeground). skapi-android's `SkapiLifecycle` calls it for you.
 
 ## close
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 fun close()
 ```
+
+```java [Java]
+void close()  // SkapiJava also cancels the calls still running
+```
+
+:::
 
 Closes the realtime connection, stops this object's background timers (the temporary account keep-alive, the realtime keep-alive and reconnects) and releases its network threads, so a JVM program can exit. The session stays saved in `storage`. Do not use the object after `close()`; make a new one.
 
 ## FetchOptions
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 FetchOptions(
     limit: Int? = null,
     ascending: Boolean? = null,
@@ -100,6 +152,17 @@ FetchOptions(
     fetchMore: Boolean = false,
 )
 ```
+
+```java [Java]
+FetchOptions fetchOptions = new FetchOptionsBuilder()
+    .limit(100)           // int
+    .ascending(false)     // boolean
+    .startKey("start")    // Object: an earlier answer's "startKey" (a Map), "start" or "end"
+    .fetchMore(true)      // boolean
+    .build();             // leave out any setting you do not need
+```
+
+:::
 
 Paging options for every method that returns a list (`getRecords()`, `getUsers()`, `getSubscriptions()`, `getTickets()` and the others). See [Paging](/database/fetch#paging).
 
@@ -114,13 +177,25 @@ A list answer is a `JsonObject` with `list`, `startKey`, `endOfList` and `startK
 
 ## SkapiStorage
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 interface SkapiStorage {
     fun getItem(key: String): String?
     fun setItem(key: String, value: String)
     fun removeItem(key: String)
 }
 ```
+
+```java [Java]
+public interface SkapiStorage {
+    String getItem(String key);  // or null
+    void setItem(String key, String value);
+    void removeItem(String key);
+}
+```
+
+:::
 
 Where the signed-in session is kept. Keys and values are strings, the same keys skapi-js keeps in `localStorage`. The methods are called on background threads, sometimes from several at once.
 
@@ -132,12 +207,25 @@ Where the signed-in session is kept. Keys and values are strings, the same keys 
 
 ## JSON helpers
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 fun jsonOf(vararg pairs: Pair<String, Any?>): JsonObject
 fun jsonArrayOf(vararg items: Any?): JsonArray
 fun Any?.toJsonElement(): JsonElement
 fun JsonElement.toJsString(): String
 ```
+
+```java [Java]
+// Java uses SkapiJson (com.skapi.java) instead
+static Map<String, Object> obj(Object... keysAndValues)
+static List<Object> list(Object... items)
+static JsonElement fromJava(Object value)
+static String stringify(Object value)
+static Object parse(String text)
+```
+
+:::
 
 | helper | |
 |---|---|
@@ -150,7 +238,9 @@ See [JSON in and out](/introduction/getting-started#json-in-and-out).
 
 ## SkapiException
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 class SkapiException(
     override val message: String,
     val code: String = "ERROR",
@@ -158,5 +248,17 @@ class SkapiException(
     val details: JsonElement? = null,
 ) : Exception
 ```
+
+```java [Java]
+public final class SkapiException extends Exception {
+    public SkapiException(String message, String code, Throwable cause, JsonElement details)
+    public String getMessage()
+    public String getCode()
+    public JsonElement getDetails()  // or null
+}
+// a failed SkapiJava future: get() throws ExecutionException, getCause() is the SkapiException
+```
+
+:::
 
 What every method throws. `code` is a short name such as `INVALID_PARAMETER`; `details` is what the server sent with the error, when it sent more than a message. See [Errors](/introduction/errors).

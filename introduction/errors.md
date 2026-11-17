@@ -7,7 +7,9 @@ Every error skapi-kotlin throws is a `SkapiException` with these fields:
 - `cause`: the underlying exception, when there is one (for example the network error behind `NETWORK_ERROR`), or `null`.
 - `details`: what the server sent with the error as a `JsonElement`, when it sent more than a message (a [ticket's error body](/tickets/tickets#when-a-consumption-fails), for example), or `null`.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 
@@ -21,11 +23,31 @@ try {
 }
 ```
 
+```java [Java]
+import com.skapi.SkapiException;
+import com.skapi.java.SkapiJava;
+import java.util.concurrent.ExecutionException;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+try {
+    skapi.login("user@example.com", "wrong password").get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    System.out.println(err.getCode());     // INCORRECT_USERNAME_OR_PASSWORD
+    System.out.println(err.getMessage());  // Incorrect username or password.
+}
+```
+
+:::
+
 `err.toString()` gives both: `INCORRECT_USERNAME_OR_PASSWORD: Incorrect username or password.`
 
 The codes are the same ones skapi-js and skapi-py use, so a check written for one works for the others. A `when` on the code reads well:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 try {
     skapi.login(email, password)
 } catch (err: SkapiException) {
@@ -36,6 +58,21 @@ try {
     }
 }
 ```
+
+```java [Java]
+try {
+    skapi.login(email, password).get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    switch (err.getCode()) {
+        case "INCORRECT_USERNAME_OR_PASSWORD": showError("Wrong e-mail or password."); break;
+        case "NETWORK_ERROR": showError("No connection. Try again."); break;
+        default: showError(err.getMessage());
+    }
+}
+```
+
+:::
 
 ## Common codes
 

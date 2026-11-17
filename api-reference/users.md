@@ -4,9 +4,17 @@ Every method throws [`SkapiException`](/introduction/errors) with `code` and `me
 
 ## getUsers
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getUsers(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getUsers(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 Signed-in users only. Returns `{"list": [UserPublic, ...], "startKey": ..., "endOfList": ..., "startKeyHistory": [...]}`.
 
@@ -36,9 +44,17 @@ Without `params`: every user, newest sign-up first.
 
 ## subscribe
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun subscribe(userId: String, getFeed: Boolean? = null, getNotified: Boolean? = null, getEmail: Boolean? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> subscribe(String userId, Boolean getFeed, Boolean getNotified, Boolean getEmail)  // getFeed, getNotified and getEmail can be left out
+```
+
+:::
 
 Signed-in users only. Subscribes to another user. See [Subscriptions and Feed](/users/subscriptions).
 
@@ -65,9 +81,17 @@ Returns **Subscription**: `{"subscriber", "subscription", "timestamp", "blocked"
 
 ## unsubscribe
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun unsubscribe(userId: String): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> unsubscribe(String userId)
+```
+
+:::
 
 Signed-in users only. Returns `SUCCESS: The user has unsubscribed.`, also when there was no subscription.
 
@@ -82,9 +106,17 @@ Signed-in users only. Returns `SUCCESS: The user has unsubscribed.`, also when t
 
 ## blockSubscriber
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun blockSubscriber(userId: String): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> blockSubscriber(String userId)
+```
+
+:::
 
 Signed-in users only. Stops that user from reading your subscription records and getting your feed records. Works on users who never subscribed. Returns `SUCCESS: Blocked user ID "<user_id>".`
 
@@ -98,9 +130,17 @@ Signed-in users only. Stops that user from reading your subscription records and
 
 ## unblockSubscriber
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun unblockSubscriber(userId: String): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> unblockSubscriber(String userId)
+```
+
+:::
 
 Signed-in users only. A blocked subscriber gets their subscription back with the options they had. Returns `SUCCESS: Unblocked user ID "<user_id>".`
 
@@ -110,7 +150,9 @@ Same as [blockSubscriber](#blocksubscriber).
 
 ## getSubscriptions
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getSubscriptions(
     subscriber: String? = null,
     subscription: String? = null,
@@ -118,6 +160,16 @@ suspend fun getSubscriptions(
     fetchOptions: FetchOptions? = null,
 ): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getSubscriptions(
+    String subscriber,
+    String subscription,
+    Boolean blocked,
+    FetchOptions fetchOptions)  // subscriber, subscription, blocked and fetchOptions can be left out
+```
+
+:::
 
 Signed-in users only. Returns `{"list": [Subscription, ...], "startKey", "endOfList", "startKeyHistory"}`; each row is `{"subscriber", "subscription", "timestamp", "blocked"}`.
 
@@ -142,9 +194,17 @@ At least one of `subscriber` or `subscription` is required. Both: that one subsc
 
 ## getFeed
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getFeed(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getFeed(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 Signed-in users only. Records posted with `upload_to_feed` by the users you subscribe to with `getFeed = true`, newest first. Returns `{"list": [record, ...], "startKey", "endOfList", "startKeyHistory"}`; each record as in [Fetching Records](/database/fetch#the-record). A new record can take a few seconds to appear.
 
@@ -165,9 +225,17 @@ Signed-in users only. Records posted with `upload_to_feed` by the users you subs
 
 ## subscribeNewsletter
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun subscribeNewsletter(params: JsonObject): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> subscribeNewsletter(Map<String, ?> params)
+```
+
+:::
 
 Subscribes an e-mail to one newsletter group. See [Newsletters](/users/newsletters).
 
@@ -200,10 +268,18 @@ Returns:
 
 ## unsubscribeNewsletter
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun unsubscribeNewsletter(group: String?): JsonElement
 suspend fun unsubscribeNewsletter(group: JsonElement?): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> unsubscribeNewsletter(Object group)  // a String, a number, or null for every group
+```
+
+:::
 
 Signed-in users only. `group` as in [subscribeNewsletter](#subscribenewsletter): a `String` (`"public"`, `"authorized"` or a group name), or a `JsonElement` for a number (`JsonPrimitive(5)`). `null` unsubscribes from every group (write `null as String?` to pick an overload). Returns `SUCCESS: <email> has been unsubscribed from group <group>.` (numeric groups as two digits, such as `01`) or `SUCCESS: <email> has been unsubscribed from all groups.`
 
@@ -217,9 +293,17 @@ Signed-in users only. `group` as in [subscribeNewsletter](#subscribenewsletter):
 
 ## getNewsletters
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getNewsletters(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getNewsletters(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 Newsletters sent to a group. Without `params`: the public newsletter (group `0`), newest first. Returns `{"list": [Newsletter, ...], "startKey", "endOfList", "startKeyHistory"}`.
 
@@ -250,9 +334,17 @@ Group `0` and named groups open to anyone can be read signed out. Groups `1` to 
 
 ## getNewsletterSubscription
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getNewsletterSubscription(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> getNewsletterSubscription(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 Signed-in users only. The user's own newsletter subscriptions, all at once (no paging). `params`: `jsonOf("group" to ...)` to list one group (as in [subscribeNewsletter](#subscribenewsletter)); left out or `null`: every group.
 
@@ -268,9 +360,17 @@ Returns a `JsonArray`: `[{"timestamp", "group", "subscribed_email", "active"}, .
 
 ## sendInquiry
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun sendInquiry(name: String, email: String, subject: String, message: String): String
 ```
+
+```java [Java]
+CompletableFuture<String> sendInquiry(String name, String email, String subject, String message)
+```
+
+:::
 
 Sends a message to the project owner's e-mail. No sign-in needed. See [Inquiries](/users/inquiry).
 

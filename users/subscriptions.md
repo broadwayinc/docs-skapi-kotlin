@@ -4,7 +4,9 @@ Users can subscribe to other users. A subscriber can read the records a user pos
 
 ## Subscribing
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 
@@ -14,6 +16,19 @@ skapi.login("b@example.com", "password")
 val sub = skapi.subscribe("<user A id>", getFeed = true)
 println(sub)  // {"subscriber":"<user B id>","subscription":"<user A id>","timestamp":...,"blocked":false,"get_feed":true,...}
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+skapi.login("b@example.com", "password").get();
+
+Map<String, Object> sub = skapi.subscribe("<user A id>", true).get();
+System.out.println(sub);  // {subscriber=<user B id>, subscription=<user A id>, timestamp=..., blocked=false, get_feed=true, ...}
+```
+
+:::
 
 | argument | |
 |---|---|
@@ -25,18 +40,35 @@ A new subscription starts with every option off. Calling `subscribe()` again for
 
 You cannot subscribe to yourself. If the user blocked you, the call fails with `The subscription is blocked.`
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.unsubscribe("<user A id>")  // "SUCCESS: The user has unsubscribed."
 ```
+
+```java [Java]
+skapi.unsubscribe("<user A id>").get();  // "SUCCESS: The user has unsubscribed."
+```
+
+:::
 
 ## Blocking subscribers
 
 A user can stop another user from reading their subscription records:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.blockSubscriber("<user B id>")    // "SUCCESS: Blocked user ID \"<user B id>\"."
 skapi.unblockSubscriber("<user B id>")  // "SUCCESS: Unblocked user ID \"<user B id>\"."
 ```
+
+```java [Java]
+skapi.blockSubscriber("<user B id>").get();    // "SUCCESS: Blocked user ID \"<user B id>\"."
+skapi.unblockSubscriber("<user B id>").get();  // "SUCCESS: Unblocked user ID \"<user B id>\"."
+```
+
+:::
 
 A user can be blocked before they ever subscribe. An unblocked subscriber gets their subscription back with the options they had; unblocking someone who never subscribed does not subscribe them. Blocking guards the subscription records only: files on those records are still reachable by their link unless the record is private or in a higher access group.
 
@@ -44,7 +76,9 @@ A user can be blocked before they ever subscribe. An unblocked subscriber gets t
 
 Pass `subscriber`, `subscription`, or both (user IDs):
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 // who user B subscribes to
 skapi.getSubscriptions(subscriber = "<user B id>")
 
@@ -58,15 +92,41 @@ skapi.getSubscriptions(subscriber = "<user B id>", subscription = "<user A id>")
 skapi.getSubscriptions(subscriber = "<user B id>", blocked = true)
 ```
 
+```java [Java]
+// who user B subscribes to
+skapi.getSubscriptions("<user B id>").get();
+
+// who subscribes to user A
+skapi.getSubscriptions(null, "<user A id>").get();
+
+// is user B subscribed to user A? (one row, or an empty list)
+skapi.getSubscriptions("<user B id>", "<user A id>").get();
+
+// the users who blocked user B
+skapi.getSubscriptions("<user B id>", null, true).get();
+```
+
+:::
+
 Each row is `{"subscriber", "subscription", "timestamp", "blocked"}`. With `subscriber` alone, `blocked = true` lists only the blocked rows and anything else lists only the active ones. With `subscription` alone, every subscriber comes back, blocked ones included, each with its `blocked` flag; `blocked = true` lists only the blocked ones.
 
 Your own user ID as `subscription` lists your own subscribers:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val me = skapi.user!!["user_id"]!!.jsonPrimitive.content
 val mySubscribers = skapi.getSubscriptions(subscription = me)
 val blockedByMe = skapi.getSubscriptions(subscription = me, blocked = true)
 ```
+
+```java [Java]
+String me = (String) skapi.getUser().get("user_id");
+Map<String, Object> mySubscribers = skapi.getSubscriptions(null, me).get();
+Map<String, Object> blockedByMe = skapi.getSubscriptions(null, me, true).get();
+```
+
+:::
 
 Your subscriber count is `subscribers` in your [`getUsers()`](/users/search) result.
 
@@ -76,7 +136,9 @@ The paging options are the same as for [`getRecords()`](/database/fetch#paging):
 
 A record is for subscribers when it is posted with `table.subscription` in [`postRecord()`](/database/create):
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.postRecord(jsonOf("title" to "New post"), jsonOf(
     "table" to jsonOf(
         "name" to "Posts",
@@ -89,6 +151,21 @@ skapi.postRecord(jsonOf("title" to "New post"), jsonOf(
 ))
 ```
 
+```java [Java]
+skapi.postRecord(SkapiJson.obj("title", "New post"), SkapiJson.obj(
+    "table", SkapiJson.obj(
+        "name", "Posts",
+        "access_group", "authorized",
+        "subscription", SkapiJson.obj(
+            "is_subscription_record", true,  // only subscribers can read it
+            "upload_to_feed", true           // and it appears in their feed
+        )
+    )
+)).get();
+```
+
+:::
+
 - `is_subscription_record`: only the uploader's subscribers (not blocked) can read the record.
 - `upload_to_feed`: the record goes to the feed of subscribers who set `get_feed`. Off unless set.
 
@@ -96,23 +173,45 @@ Both are independent. Signed-out users cannot post subscription records.
 
 Subscribers read the subscription records of one user with `table.subscription` in [`getRecords()`](/database/fetch):
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.getRecords(jsonOf(
     "table" to jsonOf("name" to "Posts", "access_group" to "authorized", "subscription" to "<user A id>"),
 ))
 ```
 
+```java [Java]
+skapi.getRecords(SkapiJson.obj(
+    "table", SkapiJson.obj("name", "Posts", "access_group", "authorized", "subscription", "<user A id>")
+)).get();
+```
+
+:::
+
 ## The feed
 
 [`getFeed()`](/api-reference/users#getfeed) lists the feed records of every user you subscribe to with `getFeed = true`, newest first:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val feed = skapi.getFeed(jsonOf("access_group" to "authorized"))
 for (r in feed["list"]!!.jsonArray) {
     val record = r.jsonObject
     println("${record["user_id"]} ${record["data"]}")
 }
 ```
+
+```java [Java]
+Map<String, Object> feed = skapi.getFeed(SkapiJson.obj("access_group", "authorized")).get();
+for (Object r : (List<Object>) feed.get("list")) {
+    Map<String, Object> record = (Map<String, Object>) r;
+    System.out.println(record.get("user_id") + " " + record.get("data"));
+}
+```
+
+:::
 
 `access_group` picks which records: `"public"` (0), `"authorized"` (1, the default) or a higher number up to your own access group. Each row is a record, as [`getRecords()`](/database/fetch#the-record) returns it.
 

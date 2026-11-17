@@ -4,9 +4,17 @@ See [Connecting to Realtime](/realtime/connecting) and [Groups and Messages](/re
 
 ## connectRealtime
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun connectRealtime(callback: (JsonObject) -> Unit): Unit
 ```
+
+```java [Java]
+CompletableFuture<Void> connectRealtime(Consumer<Map<String, Object>> callback)  // completes with null once open
+```
+
+:::
 
 Opens the realtime connection and returns once it is open. `callback(event)` runs on a background thread for every event; see [Events](/realtime/connecting#events). On Android, post to the main thread before touching views. Called again while connected, it only swaps the callback. The connection reopens on its own after a drop.
 
@@ -21,9 +29,17 @@ When opening fails, the callback also gets an `"error"` event: `Skapi: WebSocket
 
 ## closeRealtime
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun closeRealtime(): Unit
 ```
+
+```java [Java]
+CompletableFuture<Void> closeRealtime()  // completes with null
+```
+
+:::
 
 Closes the connection. The callback gets `"close"`; the group gets `USER_DISCONNECTED` and `USER_LEFT`. Does nothing when no connection is open.
 
@@ -33,9 +49,17 @@ See [onForeground](/api-reference/connection#onforeground), [onNetworkAvailable]
 
 ## joinRealtime
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun joinRealtime(group: String?): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> joinRealtime(String group)
+```
+
+:::
 
 Joins a group, leaving the current one. `null` (or `""`) leaves the group.
 
@@ -52,9 +76,17 @@ Joins a group, leaving the current one. `null` (or `""`) leaves the group.
 
 ## postRealtime
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun postRealtime(message: JsonElement, recipient: String, notification: JsonObject? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> postRealtime(Object message, String recipient, Map<String, ?> notification)  // notification can be left out
+```
+
+:::
 
 Sends any JSON value to a user (`recipient` is a user ID) or to the group you joined (`recipient` is its name). Returns `{"type": "success", "message": "Message sent."}`.
 
@@ -74,9 +106,17 @@ Sends any JSON value to a user (`recipient` is a user ID) or to the group you jo
 
 ## getRealtimeGroups
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getRealtimeGroups(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getRealtimeGroups(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 Groups that have members now: `{"list": [{"group", "number_of_users"}], ...}`. Left out, `params` lists every group.
 
@@ -99,9 +139,17 @@ Groups that have members now: `{"list": [{"group", "number_of_users"}], ...}`. L
 
 ## getRealtimeUsers
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getRealtimeUsers(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getRealtimeUsers(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 Connections in a group: `{"list": [{"user_id", "cid"}], ...}`.
 

@@ -161,9 +161,17 @@ On an [anonymous](/authentication/anonymous) session, `logout()` deletes the tem
 
 [`loginWithToken()`](/api-reference/authentication#loginwithtoken) takes over a session that started somewhere else, for example a web page using skapi-js that hands the user's tokens to your app or your Kotlin server.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val user = skapi.loginWithToken(idToken, accessToken, refreshToken)
 ```
+
+```java [Java]
+Map<String, Object> user = skapi.loginWithToken(idToken, accessToken, refreshToken).get();
+```
+
+:::
 
 All three tokens are required. The ID token must belong to this project and must not be expired. The object is then signed in as that user, and the tokens are saved to `storage`. `skapi.session` holds the current tokens (`idToken`, `accessToken`, `refreshToken`) if you need to pass them on.
 

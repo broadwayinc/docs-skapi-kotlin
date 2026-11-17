@@ -4,7 +4,9 @@
 
 Call [postRecord](/api-reference/database#postrecord) with the record's `record_id` in the config. Only the keys you send change; everything else on the record stays as it is. You must be signed in, and the record must be yours.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -15,6 +17,21 @@ val rec = skapi.postRecord(
     jsonOf("record_id" to "<record id>"),
 )
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> rec = skapi.postRecord(
+    SkapiJson.obj("title", "Hello again", "body", "Edited"), // replaces the stored data
+    SkapiJson.obj("record_id", "<record id>")
+).get();
+```
+
+:::
 
 `record_id` also takes the record's [unique ID](/database/index-tags#unique-ids).
 
@@ -28,12 +45,23 @@ val rec = skapi.postRecord(
 
 To change only the config, call the overload without `data`:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.postRecord(jsonOf(
     "record_id" to "<record id>",
     "tags" to listOf("featured"),
 ))
 ```
+
+```java [Java]
+skapi.postRecord(SkapiJson.obj(
+    "record_id", "<record id>",
+    "tags", SkapiJson.list("featured")
+)).get();
+```
+
+:::
 
 ::: warning
 `skapi.postRecord(JsonNull, jsonOf(...))` is not the same: it overwrites the data with `null`.
@@ -54,12 +82,23 @@ skapi.postRecord(jsonOf(
 
 A `table` without `access_group` keeps the record where it is. Name the group to move it:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.postRecord(jsonOf(
     "record_id" to "<record id>",
     "table" to jsonOf("name" to "notes", "access_group" to "authorized"),
 ))
 ```
+
+```java [Java]
+skapi.postRecord(SkapiJson.obj(
+    "record_id", "<record id>",
+    "table", SkapiJson.obj("name", "notes", "access_group", "authorized")
+)).get();
+```
+
+:::
 
 Moving a record into or out of `"private"` removes every [private access grant](/database/private) on it, and only the record's uploader can do it.
 
@@ -75,7 +114,9 @@ Moving a record into or out of `"private"` removes every [private access grant](
 
 [deleteRecords](/api-reference/database#deleterecords) needs a signed-in user. Files attached to a deleted record are deleted with it.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 // one record
 skapi.deleteRecords(jsonOf("record_id" to "<record id>"))
 
@@ -88,6 +129,22 @@ skapi.deleteRecords(jsonOf("unique_id" to "album:getz-gilberto"))
 // every record you uploaded to the public group of "drafts"
 skapi.deleteRecords(jsonOf("table" to jsonOf("name" to "drafts", "access_group" to "public")))
 ```
+
+```java [Java]
+// one record
+skapi.deleteRecords(SkapiJson.obj("record_id", "<record id>")).get();
+
+// up to 1000 at once
+skapi.deleteRecords(SkapiJson.obj("record_id", SkapiJson.list("<id 1>", "<id 2>", "<id 3>"))).get();
+
+// by unique ID (also a list of up to 1000)
+skapi.deleteRecords(SkapiJson.obj("unique_id", "album:getz-gilberto")).get();
+
+// every record you uploaded to the public group of "drafts"
+skapi.deleteRecords(SkapiJson.obj("table", SkapiJson.obj("name", "drafts", "access_group", "public"))).get();
+```
+
+:::
 
 A delete by query takes the same keys as [getRecords](/database/fetch): `table`, `index`, `tag`, `reference`. It deletes only your own records, skips read-only ones, and leaves the table's other access groups alone. It returns the server's message, such as `SUCCESS: records are being deleted. please give some time to finish the process.`, and a large delete can take a moment to show in later reads.
 

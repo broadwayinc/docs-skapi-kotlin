@@ -8,7 +8,9 @@ Users can sign in with an account they already have at an OpenID provider, such 
 2. Your app gets an access token from the provider, the way the provider documents it (on Android, for example, with the provider's own sign-in library).
 3. [`openIdLogin()`](/api-reference/authentication#openidlogin) sends the token and the logger ID. Skapi asks the provider for the profile, then signs the user in, creating the account on first use.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 import kotlinx.serialization.json.jsonObject
@@ -20,6 +22,19 @@ val res = skapi.openIdLogin(accessToken, "google")
 println(res["userProfile"]!!.jsonObject["user_id"]!!.jsonPrimitive.content)
 println(res["openid"])  // the profile attributes the provider returned
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> res = skapi.openIdLogin(accessToken, "google").get();
+System.out.println(((Map<?, ?>) res.get("userProfile")).get("user_id"));
+System.out.println(res.get("openid"));  // the profile attributes the provider returned
+```
+
+:::
 
 It returns a `JsonObject` with `userProfile` (the user's [profile](/authentication/profile#profile-fields)) and `openid` (the attributes from the provider).
 
@@ -34,7 +49,9 @@ If the user already signed up with a password using the same login ID, `openIdLo
 - `merge = JsonPrimitive(true)` merges the accounts and copies no attributes.
 - `merge = jsonArrayOf("name")` merges and also copies the listed OpenID attributes into the profile.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.jsonArrayOf
 import kotlinx.serialization.json.JsonPrimitive
 
@@ -46,6 +63,23 @@ val res = try {
     skapi.openIdLogin(accessToken, "google", merge = JsonPrimitive(true))
 }
 ```
+
+```java [Java]
+import com.skapi.SkapiException;
+import java.util.concurrent.ExecutionException;
+
+Map<String, Object> res;
+try {
+    res = skapi.openIdLogin(accessToken, "google").get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    if (!"ACCOUNT_EXISTS".equals(err.getCode())) throw err;
+    if (!askUser("An account already exists. Merge?")) return;
+    res = skapi.openIdLogin(accessToken, "google", true).get();
+}
+```
+
+:::
 
 ::: danger
 After a merge, the user can no longer log in with a password. This cannot be undone.

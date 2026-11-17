@@ -50,16 +50,31 @@ Both are bounded by the password. The key is derived with PBKDF2 (600,000 rounds
 An OpenID user ([openIdLogin](/api-reference/authentication#openidlogin)) never sets a password: their account password is created by Skapi, so a key made from it would not protect anything from the provider. Their encryption stays locked (`OPENID_UNSUPPORTED`): they **cannot save records with `"access_group": "private"`** (`ENCRYPTION_LOCKED`), and encrypted records shared with them read as `null`. Their other records work as usual.
 :::
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
 val skapi = Skapi("<Project ID>", encryption = EncryptionOptions())
 ```
 
+```java [Java]
+import com.skapi.MemoryStorage;
+import com.skapi.java.EncryptionOptionsBuilder;
+import com.skapi.java.SkapiJava;
+
+// storage, timeoutSeconds and targetCdn at their defaults
+SkapiJava skapi = new SkapiJava("<Project ID>", new MemoryStorage(), 120, null, new EncryptionOptionsBuilder().build());
+```
+
+:::
+
 With options:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val skapi = Skapi(
     "<Project ID>",
     encryption = EncryptionOptions(
@@ -71,11 +86,30 @@ val skapi = Skapi(
 )
 ```
 
+```java [Java]
+SkapiJava skapi = new SkapiJava(
+    "<Project ID>",
+    new MemoryStorage(),
+    120,
+    null,
+    new EncryptionOptionsBuilder()
+        .iterations(600000)   // PBKDF2 rounds. Default 600000, minimum 100000.
+        .recovery("code")     // issue an encryption recovery code. "code" (default) or "none".
+        .trustPolicy("tofu")  // "tofu" (default) or "strict". See Sharing.
+        .withheld("null")     // "null" (default) or "sentinel". See below.
+        .build()
+);
+```
+
+:::
+
 The option only applies to the object it is given to. An object made without it saves every record in the clear, and turning it on later does not encrypt what was already saved.
 
 Then use records as usual:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.login("user@example.com", "password")
 
 skapi.postRecord(
@@ -88,19 +122,46 @@ rec["data"]      // {"diagnosis": "confidential"}
 rec["encrypted"] // {"status": "encrypted", "recipients": ["<your user id>"]}
 ```
 
+```java [Java]
+skapi.login("user@example.com", "password").get();
+
+skapi.postRecord(
+    SkapiJson.obj("diagnosis", "confidential"),
+    SkapiJson.obj("table", SkapiJson.obj("name", "notes", "access_group", "private"))
+).get();
+
+Map<?, ?> rec = (Map<?, ?>) ((List<?>) skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "notes", "access_group", "private"))).get().get("list")).get(0);
+rec.get("data");      // {"diagnosis": "confidential"}
+rec.get("encrypted"); // {"status": "encrypted", "recipients": ["<your user id>"]}
+```
+
+:::
+
 ## Unlocking
 
 Signing in with a password ([login](/authentication/login), [signup](/authentication/signup) with `login`, or [verifyMfa](/api-reference/authentication#verifymfa)) unlocks encryption. The first time, it also sets up the user's keyring: a random master key wrapped under the password, and a key pair for sharing. If two devices set it up for the same user at the same moment, the first keyring kept wins: the other device uses it and removes its own keyring and public key. An account left with a stray public key on top (by an older SDK, or a removal that failed) is repaired when it unlocks: the user's real public key is published again and the stray one is removed. A user who pinned the stray fingerprint gets `ENCRYPTION_PEER_KEY_CHANGED` and must pin the new one.
 
 A session that did not sign in with a password stays locked: one restored from `storage`, or from [loginWithToken](/api-reference/authentication#loginwithtoken). skapi-kotlin keeps the master key only in memory, unless you give it a [device key store](#remember-this-device). Unlock it with the password:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.getEncryptionStatus()
 // {"status": "locked", "reason": "NO_SESSION_KEY", ...}
 
 skapi.unlockEncryption("password")
 // {"status": "unlocked"}
 ```
+
+```java [Java]
+skapi.getEncryptionStatus().get();
+// {"status": "locked", "reason": "NO_SESSION_KEY", ...}
+
+skapi.unlockEncryption("password").get();
+// {"status": "unlocked"}
+```
+
+:::
 
 `unlockEncryption()` only opens encryption that is already set up. It is set up at the first login with the password, so an account that has never logged in with its password gets `NOT_EXISTS`.
 
@@ -112,7 +173,9 @@ This is an addition of skapi-kotlin, the counterpart of skapi-js keeping the key
 
 On Android, use `AndroidKeystoreDeviceKeyStore` from skapi-android. It seals the key with an AES key that never leaves the Android Keystore. See [Android](/introduction/android).
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import com.skapi.android.AndroidKeystoreDeviceKeyStore
 import com.skapi.android.SharedPreferencesStorage
@@ -123,6 +186,23 @@ val skapi = Skapi(
     encryption = EncryptionOptions(deviceKeyStore = AndroidKeystoreDeviceKeyStore(context)),
 )
 ```
+
+```java [Java]
+import com.skapi.android.AndroidKeystoreDeviceKeyStore;
+import com.skapi.android.SharedPreferencesStorage;
+import com.skapi.java.EncryptionOptionsBuilder;
+import com.skapi.java.SkapiJava;
+
+SkapiJava skapi = new SkapiJava(
+    "<Project ID>",
+    new SharedPreferencesStorage(context),
+    120,
+    null,
+    new EncryptionOptionsBuilder().deviceKeyStore(new AndroidKeystoreDeviceKeyStore(context)).build()
+);
+```
+
+:::
 
 The core library has no store of its own on purpose: a plain file would put the key on disk in the clear. On other platforms, implement `DeviceKeyStore` (`save`, `load`, `delete`) with your platform's secure storage. Entries are named `"<service>/<owner>#<user_id>"`.
 
@@ -164,7 +244,9 @@ There are two ways to get one, and both work only while the user still has acces
 
 1. **Shown once, at setup.** The first password login with encryption on creates the code. The next [getConnectionInfo](/api-reference/connection#getconnectioninfo) returns it in `"encryption_recovery"`, one time only:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.login("user@example.com", "password")
 val recovery = skapi.getConnectionInfo()["encryption_recovery"]
 // first time: {"code": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
@@ -173,15 +255,36 @@ val recovery = skapi.getConnectionInfo()["encryption_recovery"]
 //              "message": "Your encryption recovery code was shown once and cannot be shown again. Call regenerateEncryptionRecoveryCode() to get a new one."}
 ```
 
+```java [Java]
+skapi.login("user@example.com", "password").get();
+Object recovery = skapi.getConnectionInfo().get().get("encryption_recovery");
+// first time: {"code": "XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX",
+//              "message": "This is your encryption recovery code. Save it now: it is shown only this once. ..."}
+// after that: {"code": null,
+//              "message": "Your encryption recovery code was shown once and cannot be shown again. Call regenerateEncryptionRecoveryCode() to get a new one."}
+```
+
+:::
+
 2. **A new one, any time, with [regenerateEncryptionRecoveryCode](/api-reference/encryption#regenerateencryptionrecoverycode).** It needs the user signed in and unlocked, and the old code stops working.
 
 After a password reset, sign in with the new password and unlock with the saved code, giving the new password so every later login unlocks normally. This is needed once:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.login("user@example.com", "new password") // encryption stays locked: the keyring is sealed under the old password
 val res = skapi.unlockEncryptionWithRecoveryCode("XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX", "new password")
 // {"status": "unlocked", "repaired": true, "encryptionRecoveryCode": "<a new code>"}
 ```
+
+```java [Java]
+skapi.login("user@example.com", "new password").get(); // encryption stays locked: the keyring is sealed under the old password
+Map<String, Object> res = skapi.unlockEncryptionWithRecoveryCode("XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX", "new password").get();
+// {"status": "unlocked", "repaired": true, "encryptionRecoveryCode": "<a new code>"}
+```
+
+:::
 
 Using a code replaces it: save the new one. With `recovery = "none"` no code is ever made.
 
@@ -189,9 +292,17 @@ Using a code replaces it: save the new one. With `recovery = "none"` no code is 
 
 The owner shares an encrypted record with the usual [grant](/database/private#granting-access):
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.grantPrivateRecordAccess(recordId, listOf("<user id>"))
 ```
+
+```java [Java]
+skapi.grantPrivateRecordAccess(recordId, Arrays.asList("<user id>")).get();
+```
+
+:::
 
 skapi-kotlin fetches the other user's public key, wraps the record's key to it and writes that onto the record, then grants access. The other user reads the record with their own session; the owner does not need to be online.
 

@@ -4,9 +4,17 @@ Every record lives in a **table**, in one **access group**. There is no schema t
 
 A table is always written as a JSON object with its name and its access group:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 jsonOf("name" to "posts", "access_group" to "public")
 ```
+
+```java [Java]
+SkapiJson.obj("name", "posts", "access_group", "public")
+```
+
+:::
 
 Table names are 1 to 256 characters long, with no control characters. `/`, `!`, `*`, `#` and `%` count as 3 characters each.
 
@@ -30,7 +38,9 @@ A user reads records in access groups up to their own, which is the `access_grou
 
 One table can hold records in several access groups. A query reads one table in one access group at a time:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -39,6 +49,19 @@ val skapi = Skapi("<Project ID>")
 val publicNotes = skapi.getRecords(jsonOf("table" to jsonOf("name" to "notes", "access_group" to "public")))
 val memberNotes = skapi.getRecords(jsonOf("table" to jsonOf("name" to "notes", "access_group" to "authorized")))
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> publicNotes = skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "notes", "access_group", "public"))).get();
+Map<String, Object> memberNotes = skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "notes", "access_group", "authorized"))).get();
+```
+
+:::
 
 ## Who can write
 
@@ -64,13 +87,29 @@ A signed-out caller can read only `"public"` records. Naming any other access gr
 
 When the project's **Require Login** setting is on (in the project settings on skapi.com), [getRecords](/api-reference/database#getrecords) refuses signed-out callers before anything is sent:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 try {
     skapi.getRecords(jsonOf("table" to jsonOf("name" to "posts", "access_group" to "public")))
 } catch (err: SkapiException) {
     if (err.code == "REQUIRE_LOGIN") println("Sign in first")
 }
 ```
+
+```java [Java]
+import com.skapi.SkapiException;
+import java.util.concurrent.ExecutionException;
+
+try {
+    skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "public"))).get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    if ("REQUIRE_LOGIN".equals(err.getCode())) System.out.println("Sign in first");
+}
+```
+
+:::
 
 The message is `This project requires users to sign in before reading its database, so "getRecords" is not available to a signed-out visitor.` Signed-in users are not affected, and neither are [getTables, getTags, getIndexes and getUniqueId](/database/index-tags#table-tag-and-index-information). The setting is a guard in the SDK, not an access rule on the server: data that must stay hidden from signed-out callers belongs in an access group above `"public"`.
 

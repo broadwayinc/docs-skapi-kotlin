@@ -277,7 +277,7 @@ An Android app keeps one object for as long as the app runs and does not need to
 
 ## Reading the rest of these docs
 
-The other pages show Kotlin. Every method has the same name and the same arguments, in the same order, on `SkapiJava`. Read them like this:
+Every code example in these docs has a **Kotlin** and a **Java** tab. The text and the tables around them use the Kotlin names. Every method has the same name and the same arguments, in the same order, on `SkapiJava`. Read the Kotlin names like this:
 
 - Kotlin `skapi.getRecords(query)` is `skapi.getRecords(query)` on SkapiJava, returning a `CompletableFuture` of a `Map`.
 - A `JsonObject` you pass is a `Map<String, Object>`; `jsonOf("name" to "posts")` is `SkapiJson.obj("name", "posts")`, and `listOf(...)` or `jsonArrayOf(...)` is `SkapiJson.list(...)` or any `List`.
@@ -286,5 +286,3 @@ The other pages show Kotlin. Every method has the same name and the same argumen
 - Kotlin properties are getters: `skapi.user` is `skapi.getUser()`, `skapi.session` is `skapi.getSession()`, `skapi.version` is `skapi.getVersion()`.
 - A call that returns nothing in Kotlin (`pinPeerKey`, `connectRealtime`, `closeRealtime`) completes with `null`.
 - `try { ... } catch (err: SkapiException)` around a Kotlin call is a catch of `ExecutionException` around `get()`, with the `SkapiException` as its cause.
-
-The starter pages ([Getting Started](/introduction/getting-started), [Login / Logout](/authentication/login), [Creating Records](/database/create), [Fetching Records](/database/fetch) and [Files](/database/files)) show both languages side by side.

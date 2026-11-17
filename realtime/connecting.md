@@ -6,7 +6,9 @@ The realtime connection sends JSON between signed-in users as it happens: chat, 
 
 The user must be signed in (an [anonymous login](/api-reference/authentication#anonymouslogin) works too). [connectRealtime](/api-reference/realtime#connectrealtime) takes a callback and returns once the connection is open:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -18,11 +20,26 @@ skapi.connectRealtime { rt ->
 }
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJava;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+skapi.login("user@example.com", "password").get();
+
+skapi.connectRealtime(rt -> {
+    System.out.println(rt.get("type") + " " + rt.get("sender") + " " + rt.get("message"));
+}).get();
+```
+
+:::
+
 The callback runs on a background thread, once for every event. It is a plain function, not a `suspend` one, so keep it short and hand longer work to a coroutine of your own.
 
 **On Android**, views can only be touched on the main thread. Post to it from the callback:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.connectRealtime { rt ->
     runOnUiThread {
         messageView.text = rt["message"].toString()
@@ -30,9 +47,21 @@ skapi.connectRealtime { rt ->
 }
 ```
 
+```java [Java]
+skapi.connectRealtime(rt -> {
+    runOnUiThread(() -> {
+        messageView.setText(SkapiJson.stringify(rt.get("message")));
+    });
+});
+```
+
+:::
+
 **On the JVM**, do not count on the connection's threads to keep your program alive (the reconnect and keep-alive timers are daemon threads). A program that only listens has to keep running itself:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 fun main() = runBlocking {
     val skapi = Skapi("<Project ID>")
     skapi.login("user@example.com", "password")
@@ -40,6 +69,17 @@ fun main() = runBlocking {
     awaitCancellation()
 }
 ```
+
+```java [Java]
+public static void main(String[] args) throws Exception {
+    SkapiJava skapi = new SkapiJava("<Project ID>");
+    skapi.login("user@example.com", "password").get();
+    skapi.connectRealtime(rt -> System.out.println(rt)).get();
+    Thread.currentThread().join();  // waits until the program is stopped
+}
+```
+
+:::
 
 Calling `connectRealtime` again while connected only swaps the callback.
 
@@ -96,8 +136,16 @@ On Android, skapi-android's `SkapiLifecycle.watch(application, skapi)` calls the
 
 ## Closing the connection
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.closeRealtime()
 ```
+
+```java [Java]
+skapi.closeRealtime().get();
+```
+
+:::
 
 Your callback gets `"close"`, and the other members of your group get `USER_DISCONNECTED` and `USER_LEFT` for you. [logout](/api-reference/authentication#logout) closes the connection too, and so does `skapi.close()`.
