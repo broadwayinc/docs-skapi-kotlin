@@ -4,7 +4,9 @@
 
 The project owner must turn on **Anonymous Login** in the project settings. While it is off, the call throws `INVALID_REQUEST` (`Anonymous login is not enabled for this project.`).
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 import kotlinx.serialization.json.jsonPrimitive
@@ -15,6 +17,19 @@ val user = skapi.anonymousLogin()
 println(user["anonymous"]!!.jsonPrimitive.content)     // true
 println(user["access_group"]!!.jsonPrimitive.content)  // 1
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> user = skapi.anonymousLogin().get();
+System.out.println(user.get("anonymous"));     // true
+System.out.println(user.get("access_group"));  // 1
+```
+
+:::
 
 From then on the object is signed in like any other user, with the limits below.
 
@@ -51,12 +66,24 @@ To tell anonymous users apart, check `skapi.user?.get("anonymous")`: it is `true
 
 With `storage`, a temporary account comes back on the next run. It may have been deleted in the meantime (30 minutes after the last keep-alive). [`verifyAnonymousSession()`](/api-reference/authentication#verifyanonymoussession) asks the server:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val skapi = Skapi("<Project ID>", storage = FileStorage("session.json"))
 
 if (skapi.verifyAnonymousSession() == null) {
     skapi.anonymousLogin()  // the old account is gone: start a new one
 }
 ```
+
+```java [Java]
+SkapiJava skapi = new SkapiJava("<Project ID>", new FileStorage("session.json"));
+
+if (skapi.verifyAnonymousSession().get() == null) {
+    skapi.anonymousLogin().get();  // the old account is gone: start a new one
+}
+```
+
+:::
 
 It returns the profile, or `null` after signing out when the account no longer exists. For a regular account it returns the profile without a request.

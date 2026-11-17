@@ -4,9 +4,17 @@ Every method throws [`SkapiException`](/introduction/errors) with a `code` and a
 
 ## consumeTicket
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun consumeTicket(ticketId: String, method: String = "POST", data: JsonElement? = null, auth: Boolean = false): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> consumeTicket(String ticketId, String method, Object data, boolean auth)  // method ("POST"), data and auth (false) can be left out
+```
+
+:::
 
 Calls a ticket of the project, at `https://<first 4 characters of the service ID>.skapi.dev/`.
 
@@ -45,9 +53,17 @@ Returns the receipt, or the body a Respond action of the ticket composed, as sen
 
 ## getTickets
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getTickets(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getTickets(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 The project's tickets. Signed-in users only. Returns `{"list", "startKey", "endOfList", "startKeyHistory"}`, up to 100 a page; see [Paging](/database/fetch#paging).
 
@@ -74,9 +90,17 @@ Each row:
 
 ## getConsumedTickets
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getConsumedTickets(params: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getConsumedTickets(Map<String, ?> params, FetchOptions fetchOptions)  // params and fetchOptions can be left out
+```
+
+:::
 
 The signed-in user's own consumptions, the ones made with `auth = true`, oldest first. Returns `{"list", "startKey", "endOfList", "startKeyHistory"}`.
 

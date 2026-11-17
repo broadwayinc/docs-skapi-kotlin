@@ -2,7 +2,9 @@
 
 A record in the `"private"` access group (`"*"` for short) can be read only by its uploader and by the users the uploader grants access to.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -15,6 +17,22 @@ val rec = skapi.postRecord(
 val recordId = rec["record_id"]!!.jsonPrimitive.content
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Map<String, Object> rec = skapi.postRecord(
+    SkapiJson.obj("note", "Only for me and my doctor"),
+    SkapiJson.obj("table", SkapiJson.obj("name", "health", "access_group", "private"))
+).get();
+String recordId = (String) rec.get("record_id");
+```
+
+:::
+
 To keep its `data` unreadable to the server as well, see [Encrypting Private Data](/database/encryption).
 
 Anyone else who fetches it gets `INVALID_REQUEST`: `User has no private access.` The project owner and admins read a private record only on the same terms as any other user.
@@ -25,17 +43,33 @@ A private record that **references** another record can also be read by the user
 
 [grantPrivateRecordAccess](/api-reference/database#grantprivaterecordaccess) shares one record with up to 100 users at a time. Only the record's uploader can grant, unless the record was posted with `"source" to jsonOf("allow_granted_to_grant_others" to true)`.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.grantPrivateRecordAccess(recordId, listOf("<user id 1>", "<user id 2>"))
 ```
+
+```java [Java]
+skapi.grantPrivateRecordAccess(recordId, Arrays.asList("<user id 1>", "<user id 2>")).get();
+```
+
+:::
 
 A granted user can read the record, even when it is private or above their own access group, and every record that references it. They can also [reference](/database/reference) it.
 
 ## Removing access
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.removePrivateRecordAccess(recordId, listOf("<user id>"))
 ```
+
+```java [Java]
+skapi.removePrivateRecordAccess(recordId, Arrays.asList("<user id>")).get();
+```
+
+:::
 
 The user cannot get a new private access key for the record after this. A key they already hold keeps working until it expires, so they lose access to the record and its files **within 1 hour** at most (see [Private files](#private-files)).
 
@@ -43,13 +77,25 @@ The user cannot get a new private access key for the record after this. A key th
 
 [listPrivateRecordAccess](/api-reference/database#listprivaterecordaccess) takes `recordId`, `userIds`, or both (at least one):
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 // who can read this record
 skapi.listPrivateRecordAccess(recordId = recordId)
 
 // which records this user was granted
 skapi.listPrivateRecordAccess(userIds = listOf("<user id>"))
 ```
+
+```java [Java]
+// who can read this record
+skapi.listPrivateRecordAccess(recordId).get();
+
+// which records this user was granted
+skapi.listPrivateRecordAccess(null, Arrays.asList("<user id>")).get();
+```
+
+:::
 
 ```json
 {"list": [{"record_id": "...", "user_id": "..."}, ...], "startKey": ..., "endOfList": true, ...}
@@ -61,12 +107,23 @@ It takes the [paging options](/database/fetch#paging) as `fetchOptions`.
 
 Moving a record into or out of `"private"` removes **every** grant on it, in either direction. Grant again afterwards if those users should keep access. Only the record's uploader can move it across that line.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.postRecord(jsonOf(
     "record_id" to recordId,
     "table" to jsonOf("name" to "health", "access_group" to "authorized"), // clears the grants
 ))
 ```
+
+```java [Java]
+skapi.postRecord(SkapiJson.obj(
+    "record_id", recordId,
+    "table", SkapiJson.obj("name", "health", "access_group", "authorized") // clears the grants
+)).get();
+```
+
+:::
 
 ## Private files
 
@@ -76,9 +133,17 @@ A private access key is valid for **1 hour**. skapi-kotlin renews it on its own:
 
 [requestPrivateRecordAccessKey](/api-reference/database#requestprivaterecordaccesskey) is that request on its own. You only need it to build file requests yourself:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val key = skapi.requestPrivateRecordAccessKey(recordId)
 ```
+
+```java [Java]
+String key = skapi.requestPrivateRecordAccessKey(recordId).get();
+```
+
+:::
 
 When your access comes from a record that the private record references, pass that record's ID as `referenceId`.
 

@@ -14,12 +14,12 @@ hero:
       text: skapi.com
       link: https://www.skapi.com
   image:
-    src: /sk-kotlin-sdk.svg
-    alt: Skapi logo with the Kotlin and Java logos
+    src: /skapi-icon-cut-low.png
+    alt: Skapi logo
 
 features:
   - title: Android Apps and the JVM
-    icon: 📱
+    icon: '<span class="feature-logos"><span><img src="/lang/kotlin.svg" alt="Kotlin logo" width="28" height="28"></span><span><img src="/lang/java.svg" alt="Java logo" width="28" height="28"></span></span>'
     details: One library for Android apps, Kotlin and Java servers, desktop programs and command line tools. Suspend functions in Kotlin, CompletableFuture in Java, no server to deploy.
     link: https://github.com/broadwayinc/skapi-kotlin
   - title: Build with your AI Agents

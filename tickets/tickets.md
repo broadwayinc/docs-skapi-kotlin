@@ -6,7 +6,9 @@ A ticket is an endpoint of your project that runs actions when it is called: pos
 
 [consumeTicket](/api-reference/tickets#consumeticket) calls a ticket with `data`:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 import com.skapi.jsonOf
@@ -23,6 +25,25 @@ skapi.consumeTicket("order-note", "POST", jsonOf("order" to "A-1001"))
 skapi.login("user@example.com", "password")
 val unlocked = skapi.consumeTicket("unlock-guide", "POST", auth = true)
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+// anonymous GET: data becomes the query string
+Object coupon = skapi.consumeTicket("launch-coupon", "GET", SkapiJson.obj("code", "LAUNCH24")).get();
+
+// anonymous POST: data is the JSON body
+skapi.consumeTicket("order-note", "POST", SkapiJson.obj("order", "A-1001")).get();
+
+// signed in: the consumer is the user
+skapi.login("user@example.com", "password").get();
+Object unlocked = skapi.consumeTicket("unlock-guide", "POST", null, true).get();
+```
+
+:::
 
 The route depends on `method` and `auth`:
 
@@ -61,7 +82,9 @@ A ticket with a Respond action returns what that action composed instead, as it 
 
 A refused consumption throws a `SkapiException` whose `code` is the ticket's error code and whose `details` is the whole error body:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 try {
     skapi.consumeTicket("launch-coupon", "GET", jsonOf("code" to "WRONG"))
 } catch (err: SkapiException) {
@@ -73,6 +96,27 @@ try {
     println(body?.get("action"))  // {"act":"req","path":"actions[2]"} on an action failure
 }
 ```
+
+```java [Java]
+import com.skapi.SkapiException;
+import java.util.concurrent.ExecutionException;
+
+try {
+    skapi.consumeTicket("launch-coupon", "GET", SkapiJson.obj("code", "WRONG")).get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    Map<String, Object> body = (Map<String, Object>) SkapiJson.toJava(err.getDetails());
+    System.out.println(err.getCode());     // CONDITION_FAILED
+    System.out.println(err.getMessage());  // one sentence
+    if (body != null) {
+        System.out.println(body.get("stage"));                         // "ticket", "condition" or "action"
+        System.out.println(SkapiJson.stringify(body.get("detail")));  // {"field":"params","keys":["code"]}
+        System.out.println(SkapiJson.stringify(body.get("action")));  // {"act":"req","path":"actions[2]"} on an action failure
+    }
+}
+```
+
+:::
 
 This is the same whether the ticket answered 400 or, with **Always answer 200** on, 200. Mistakes caught before sending (a bad `ticketId`, `auth = true` with GET) are plain `INVALID_PARAMETER` errors with no `details`.
 
@@ -94,12 +138,23 @@ There is no rollback: actions that ran before a failure stay done.
 
 [getTickets](/api-reference/tickets#gettickets) lists the project's tickets for a signed-in user. Each row is the public part of a ticket:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val tickets = skapi.getTickets()
 // {"list":[{"ticket_id":"launch-coupon","description":"Launch coupon","count":87,"timestamp":1757721600000}, ...], ...}
 
 val one = skapi.getTickets(jsonOf("ticket_id" to "launch-coupon"))
 ```
+
+```java [Java]
+Map<String, Object> tickets = skapi.getTickets().get();
+// {"list":[{"ticket_id":"launch-coupon","description":"Launch coupon","count":87,"timestamp":1757721600000}, ...], ...}
+
+Map<String, Object> one = skapi.getTickets(SkapiJson.obj("ticket_id", "launch-coupon")).get();
+```
+
+:::
 
 `count` (consumptions left) and `time_to_live` (when it expires, in milliseconds) are there only when the ticket has them.
 
@@ -107,7 +162,9 @@ val one = skapi.getTickets(jsonOf("ticket_id" to "launch-coupon"))
 
 [getConsumedTickets](/api-reference/tickets#getconsumedtickets) lists the signed-in user's consumptions, oldest first. Only calls made with `auth = true` belong to a user, so anonymous ones never appear. `ticket_id` narrows the list to tickets whose ID starts with it.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import kotlinx.serialization.json.*
 
 val consumed = skapi.getConsumedTickets(jsonOf("ticket_id" to "unlock-guide"))
@@ -119,6 +176,22 @@ for (r in consumed["list"]!!.jsonArray) {
     println("${row["ticket_id"]} ${row["consume_id"]} ${row["timestamp"]} $ok")
 }
 ```
+
+```java [Java]
+import java.util.List;
+import java.util.Map;
+
+Map<String, Object> consumed = skapi.getConsumedTickets(SkapiJson.obj("ticket_id", "unlock-guide")).get();
+
+for (Object r : (List<Object>) consumed.get("list")) {
+    Map<String, Object> row = (Map<String, Object>) r;
+    Map<String, Object> log = (Map<String, Object>) SkapiJson.parse((String) row.get("description"));
+    Object ok = ((Map<String, Object>) log.get("outcome")).get("ok");
+    System.out.println(row.get("ticket_id") + " " + row.get("consume_id") + " " + row.get("timestamp") + " " + ok);
+}
+```
+
+:::
 
 | field | |
 |---|---|

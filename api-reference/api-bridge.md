@@ -6,9 +6,19 @@ A request is addressed by its `request_id`, or by its short `id` (`"<stamp>:<ent
 
 ## forwardRequest
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forwardRequest(options: JsonObject, form: Map<String, Any?>? = null, onStream: ((String, Int) -> Unit)? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> forwardRequest(Map<String, ?> options, Map<String, ?> form, BiConsumer<String, Integer> onStream)
+// also forwardRequest(options) and forwardRequest(options, form)
+// form values: plain Java values, byte[] or FileUpload
+```
+
+:::
 
 Calls another API from Skapi's server.
 
@@ -70,10 +80,20 @@ An error answer from the destination is not thrown: inline it is returned as the
 
 ## forwardRequestPoll
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forwardRequestPoll(requestId: String, pollMillis: Long = 1000, url: String? = null, method: String? = null,
                                onStream: ((String, Int) -> Unit)? = null, service: String? = null, owner: String? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> forwardRequestPoll(String requestId, long pollMillis, String url, String method,
+                                             BiConsumer<String, Integer> onStream, String service, String owner)
+// leave out arguments from the right; forwardRequestPoll(requestId) checks every 1000 ms
+```
+
+:::
 
 Waits for a queued request and returns its result. The first check goes out after `pollMillis` milliseconds (`0` means 1000). It suspends until the request settles; there is no time limit, so cancel the coroutine to stop waiting. With `onStream`, new text of a streamed request is handed over as it arrives.
 
@@ -105,9 +125,18 @@ Returns:
 
 ## forwardRequestStream
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forwardRequestStream(requestId: String, options: JsonObject? = null, onStream: ((String, Int) -> Unit)? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> forwardRequestStream(String requestId, Map<String, ?> options, BiConsumer<String, Integer> onStream)
+// also forwardRequestStream(requestId) and forwardRequestStream(requestId, options)
+```
+
+:::
 
 Reads a streamed request, from the start or after `since`, and returns once it settles. The first read is immediate. Running: hands new text to `onStream` until it settles, then returns the envelope. Settled, not finalized: hands over all the stored text, then returns the envelope. Finalized: returns the kept value. After three degraded reads in a row on a settled request it returns what it has.
 
@@ -127,9 +156,18 @@ Reads a streamed request, from the start or after `since`, and returns once it s
 
 ## forwardRequestFinalize
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forwardRequestFinalize(requestId: String, data: JsonElement? = null, options: JsonObject? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> forwardRequestFinalize(String requestId, Object data, Map<String, ?> options)
+// also forwardRequestFinalize(requestId) and forwardRequestFinalize(requestId, data)
+```
+
+:::
 
 Stores `data` as a settled streamed request's answer and releases its pieces. Later polls return `data`; [forwardRequestHistory](#forwardrequesthistory) lists it as `response_body`. Calling it again replaces the value. Without `data`, `null` is stored. `options`: `url` and `method`, needed with a short `id`.
 
@@ -151,9 +189,18 @@ Returns `{"finalized": <boolean>, "message": <string>}`. These come back with `"
 
 ## forwardRequestHistory
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forwardRequestHistory(params: JsonObject, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> forwardRequestHistory(Map<String, ?> params, FetchOptions fetchOptions)
+// also forwardRequestHistory(params)
+```
+
+:::
 
 Your forwarded requests to one URL and method. Returns `{"list", "startKey", "endOfList", "startKeyHistory"}`; see [Paging](/database/fetch#paging). The server sends up to 100 at a time.
 
@@ -196,9 +243,17 @@ Each item has `id`, `status_code`, `response_body` and `request_id`; the other k
 
 ## cancelForwardRequest
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun cancelForwardRequest(params: JsonObject): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> cancelForwardRequest(Map<String, ?> params)
+```
+
+:::
 
 Cancels a request that is still `pending` or `running`; it stays in the history as `cancelled`. A streamed request's pieces are discarded. `params`: `url`, `method` (upper case) and `id` (the short id), all required.
 
@@ -213,9 +268,17 @@ Returns `{"removed": <boolean>, "message": <string>}`: `Cancelled.`, `Request no
 
 ## forwardRequestQueueCount
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forwardRequestQueueCount(params: JsonObject): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> forwardRequestQueueCount(Map<String, ?> params)
+```
+
+:::
 
 How many requests wait in one queue. Signed-in users only. `params`: `{"queue": <string>}`.
 

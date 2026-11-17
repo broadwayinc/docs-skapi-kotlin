@@ -16,7 +16,9 @@ An e-mail confirmed through [signup confirmation](/authentication/signup#signup-
 1. Without arguments, it e-mails a verification code to the user.
 2. With the code, it verifies the e-mail.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import kotlinx.serialization.json.jsonPrimitive
 
@@ -29,6 +31,20 @@ println(skapi.verifyEmail(code))  // SUCCESS: "email" is verified.
 println(skapi.user!!["email_verified"]!!.jsonPrimitive.content)  // true
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJava;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+skapi.login("user@example.com", "password").get();
+
+System.out.println(skapi.verifyEmail().get());      // SUCCESS: Verification code has been sent.
+String code = askForCode();                         // your screen: "Code from the e-mail"
+System.out.println(skapi.verifyEmail(code).get());  // SUCCESS: "email" is verified.
+System.out.println(skapi.getUser().get("email_verified"));  // true
+```
+
+:::
+
 When the e-mail is already verified, `verifyEmail()` returns `SUCCESS: "email" is verified.` and sends nothing.
 
 To use one of your project's uploaded templates for the code e-mail, pass its message ID: `verifyEmail(template = jsonOf("verification" to "<message_id>"))`.
@@ -39,10 +55,20 @@ Changing the e-mail with [`updateProfile()`](/authentication/profile) makes it u
 
 When a user changed their e-mail and has not verified the new one, [`lastVerifiedEmail()`](/api-reference/authentication#lastverifiedemail) returns their previous verified address. `lastVerifiedEmail(revert = true)` switches the account back to that address, verified, and returns the updated profile.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 println(skapi.lastVerifiedEmail().jsonPrimitive.content)  // old@example.com
 val user = skapi.lastVerifiedEmail(revert = true).jsonObject
 println(user["email"]!!.jsonPrimitive.content)            // old@example.com
 ```
+
+```java [Java]
+System.out.println(skapi.lastVerifiedEmail().get());  // old@example.com
+Map<String, Object> user = (Map<String, Object>) skapi.lastVerifiedEmail(true).get();
+System.out.println(user.get("email"));                // old@example.com
+```
+
+:::
 
 When the current e-mail is verified, it returns the current e-mail. When there is no earlier verified address, it throws `NOT_EXISTS`.

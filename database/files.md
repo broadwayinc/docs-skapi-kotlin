@@ -111,7 +111,9 @@ Files go up one after another, and a refused file does not stop the rest. With f
 
 ## Files on a record
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val rec = skapi.getRecords(jsonOf("record_id" to "<record id>"))["list"]!!.jsonArray[0].jsonObject
 
 for (f in rec["bin"]!!.jsonObject["picture"]!!.jsonArray) {
@@ -119,6 +121,17 @@ for (f in rec["bin"]!!.jsonObject["picture"]!!.jsonArray) {
     println("${file["filename"]} ${file["size"]} ${file["url"]}")
 }
 ```
+
+```java [Java]
+Map<?, ?> rec = (Map<?, ?>) ((List<?>) skapi.getRecords(SkapiJson.obj("record_id", "<record id>")).get().get("list")).get(0);
+
+for (Object f : (List<?>) ((Map<?, ?>) rec.get("bin")).get("picture")) {
+    Map<?, ?> file = (Map<?, ?>) f;
+    System.out.println(file.get("filename") + " " + file.get("size") + " " + file.get("url"));
+}
+```
+
+:::
 
 Each file is a `JsonObject`:
 
@@ -141,7 +154,9 @@ A file in a `"public"` record has a plain CDN link anyone can open. For other ac
 
 Each method takes a file's `url`:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val url = rec["bin"]!!.jsonObject["picture"]!!.jsonArray[0].jsonObject["url"]!!.jsonPrimitive.content
 
 val content: ByteArray = skapi.getFile(url)                        // the bytes
@@ -150,6 +165,19 @@ val link: String = skapi.getFileUrl(url)                           // a URL to o
 val info: JsonObject = skapi.getFileInfo(url)                      // details, no download
 val saved: File = skapi.downloadFile(url, File("beach.jpg"))       // writes the file, returns it
 ```
+
+```java [Java]
+List<?> pictures = (List<?>) ((Map<?, ?>) rec.get("bin")).get("picture");
+String url = (String) ((Map<?, ?>) pictures.get(0)).get("url");
+
+byte[] content = skapi.getFile(url).get();                          // the bytes
+String text = skapi.getFileText(url).get();                         // read as UTF-8
+String link = skapi.getFileUrl(url).get();                          // a URL to open
+Map<String, Object> info = skapi.getFileInfo(url).get();            // details, no download
+File saved = skapi.downloadFile(url, new File("beach.jpg")).get();  // writes the file, returns it
+```
+
+:::
 
 | method | returns |
 |---|---|
@@ -180,9 +208,17 @@ You need access to the record to read its files. Files of records that are not `
 
 `expiresSeconds` makes a signed link that anyone can open until it expires, without signing in. Making it needs a signed-in user with access to the file.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val link = skapi.getFileUrl(url, expiresSeconds = 3600)
 ```
+
+```java [Java]
+String link = skapi.getFileUrl(url, 3600).get();
+```
+
+:::
 
 `downloadFile(url, destination, expiresSeconds)` downloads through such a link. A signed link passed back to any of these methods is opened as it is. `expiresSeconds` only works on Skapi file URLs (`INVALID_PARAMETER`: `Expires option can only be used on skapi cdn endpoints.`).
 
@@ -190,7 +226,9 @@ val link = skapi.getFileUrl(url, expiresSeconds = 3600)
 
 Update the record with `remove_bin`, a list of files from its `bin` or their `url`s:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val rec = skapi.getRecords(jsonOf("record_id" to "<record id>"))["list"]!!.jsonArray[0].jsonObject
 val first = rec["bin"]!!.jsonObject["picture"]!!.jsonArray[0]
 
@@ -203,6 +241,21 @@ skapi.postRecord(jsonOf(
 skapi.postRecord(jsonOf("record_id" to rec["record_id"], "remove_bin" to null))
 ```
 
+```java [Java]
+Map<?, ?> rec = (Map<?, ?>) ((List<?>) skapi.getRecords(SkapiJson.obj("record_id", "<record id>")).get().get("list")).get(0);
+Object first = ((List<?>) ((Map<?, ?>) rec.get("bin")).get("picture")).get(0);
+
+skapi.postRecord(SkapiJson.obj(
+    "record_id", rec.get("record_id"),
+    "remove_bin", SkapiJson.list(first) // or SkapiJson.list(((Map<?, ?>) first).get("url"))
+)).get();
+
+// every file on the record
+skapi.postRecord(SkapiJson.obj("record_id", rec.get("record_id"), "remove_bin", null)).get();
+```
+
+:::
+
 An empty list removes nothing.
 
 The files must belong to the record you update.
@@ -213,10 +266,22 @@ The files must belong to the record you update.
 
 One case is still read wrong: a name that itself holds an encoded sequence, such as `a%20b.pdf`, deleted through a saved `?t=` URL that this `Skapi` object did not hand out. For such names, remove the file with `remove_bin` and the file object from `bin`.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val urls = rec["bin"]!!.jsonObject["picture"]!!.jsonArray.map { it.jsonObject["url"]!!.jsonPrimitive.content }
 val records = skapi.deleteFiles(urls)
 ```
+
+```java [Java]
+List<String> urls = new ArrayList<>();
+for (Object f : (List<?>) ((Map<?, ?>) rec.get("bin")).get("picture")) {
+    urls.add((String) ((Map<?, ?>) f).get("url"));
+}
+Object records = skapi.deleteFiles(urls).get();
+```
+
+:::
 
 The whole list is checked first: if any file is refused, none is deleted.
 

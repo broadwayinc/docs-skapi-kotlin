@@ -69,24 +69,43 @@ A `table` without `access_group` throws `INVALID_PARAMETER`: `"table.access_grou
 
 ## By record ID or unique ID
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val rec = skapi.getRecords(jsonOf("record_id" to "<record id>"))["list"]!!.jsonArray[0].jsonObject
 val album = skapi.getRecords(jsonOf("unique_id" to "album:getz-gilberto"))["list"]!!.jsonArray[0].jsonObject
 ```
+
+```java [Java]
+Map<?, ?> rec = (Map<?, ?>) ((List<?>) skapi.getRecords(SkapiJson.obj("record_id", "<record id>")).get().get("list")).get(0);
+Map<?, ?> album = (Map<?, ?>) ((List<?>) skapi.getRecords(SkapiJson.obj("unique_id", "album:getz-gilberto")).get().get("list")).get(0);
+```
+
+:::
 
 Every other key is ignored, and `record_id` wins when both are given. A missing record throws `NOT_EXISTS` (`Record does not exists.` or `Unique ID does not exists.`). A record you may not read throws `INVALID_REQUEST`: `No access to the record.`, or `User has no private access.` for a [private](/database/private) one.
 
 ## From a table
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val result = skapi.getRecords(jsonOf("table" to jsonOf("name" to "posts", "access_group" to "authorized")))
 ```
+
+```java [Java]
+Map<String, Object> result = skapi.getRecords(SkapiJson.obj("table", SkapiJson.obj("name", "posts", "access_group", "authorized"))).get();
+```
+
+:::
 
 Access groups other than `"public"` need a signed-in user. See [Tables and Access Groups](/database/introduction).
 
 ## By index
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.getRecords(jsonOf(
     "table" to jsonOf("name" to "albums", "access_group" to "public"),
     "index" to jsonOf("name" to "year", "value" to 1960, "condition" to ">="),
@@ -98,22 +117,49 @@ skapi.getRecords(jsonOf(
 ))
 ```
 
+```java [Java]
+skapi.getRecords(SkapiJson.obj(
+    "table", SkapiJson.obj("name", "albums", "access_group", "public"),
+    "index", SkapiJson.obj("name", "year", "value", 1960, "condition", ">=")
+)).get();
+
+skapi.getRecords(SkapiJson.obj(
+    "table", SkapiJson.obj("name", "albums", "access_group", "public"),
+    "index", SkapiJson.obj("name", "year", "value", 1960, "range", 1969)
+)).get();
+```
+
+:::
+
 `condition` is one of `"="` (default), `">"`, `">="`, `"<"`, `"<="` or `"eq"`, `"gt"`, `"gte"`, `"lt"`, `"lte"`. `range` reads from `value` to `range`, both included, and must be the same type as `value`. If both are given, `range` is dropped and `condition` is used. Strings, compound names and the special `$` indexes are in [Indexes](/database/index-tags#querying-an-index).
 
 ## By tag
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.getRecords(jsonOf(
     "table" to jsonOf("name" to "albums", "access_group" to "public"),
     "tag" to "jazz",
 ))
 ```
 
+```java [Java]
+skapi.getRecords(SkapiJson.obj(
+    "table", SkapiJson.obj("name", "albums", "access_group", "public"),
+    "tag", "jazz"
+)).get();
+```
+
+:::
+
 The tag matches exactly. It can be combined with `index`. To read records with one tag **or** another, query each tag and merge the lists by `record_id`.
 
 ## By reference
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 // every record that references a post, in every table this user can read
 skapi.getRecords(jsonOf("reference" to "<record id or unique id>"))
 
@@ -129,6 +175,25 @@ skapi.getRecords(jsonOf(
     "reference" to "<user id>",
 ))
 ```
+
+```java [Java]
+// every record that references a post, in every table this user can read
+skapi.getRecords(SkapiJson.obj("reference", "<record id or unique id>")).get();
+
+// only the comments, in one access group
+skapi.getRecords(SkapiJson.obj(
+    "table", SkapiJson.obj("name", "comments", "access_group", "public"),
+    "reference", "<record id or unique id>"
+)).get();
+
+// records a user uploaded to a table
+skapi.getRecords(SkapiJson.obj(
+    "table", SkapiJson.obj("name", "comments", "access_group", "public"),
+    "reference", "<user id>"
+)).get();
+```
+
+:::
 
 `reference` can also be an object: `{"record_id": ...}`, `{"unique_id": ...}` or `{"user_id": ...}`. Signed-out callers always need `table`. Which records come back is in [References](/database/reference#fetching-references).
 

@@ -6,7 +6,9 @@ Answers arrive by polling. A call that waits for an answer suspends until that a
 
 ## Sending a request
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.*
 import kotlinx.serialization.json.*
 
@@ -19,6 +21,22 @@ val answer = skapi.forwardRequest(jsonOf(
     "data" to jsonOf("report" to "quarterly"),
 ))
 ```
+
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+
+Object answer = skapi.forwardRequest(SkapiJson.obj(
+    "url", "https://api.example.com/v1/report",
+    "method", "POST",
+    "headers", SkapiJson.obj("Content-Type", "application/json"),
+    "data", SkapiJson.obj("report", "quarterly")
+)).get();
+```
+
+:::
 
 | option | |
 |---|---|
@@ -35,12 +53,23 @@ val answer = skapi.forwardRequest(jsonOf(
 
 The second argument, `form`, is a `Map<String, Any?>` merged into `data` (or into `params` for `GET`, `DELETE` and `HEAD`). Its values can be `JsonElement`, `String`, numbers, booleans, `null`, `ByteArray` or `FileUpload`. Where `form` and the option hold the same key, the option wins.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.forwardRequest(
     jsonOf("url" to "https://api.example.com/search", "method" to "GET"),
     mapOf("q" to "otter"),
 )
 ```
+
+```java [Java]
+skapi.forwardRequest(
+    SkapiJson.obj("url", "https://api.example.com/search", "method", "GET"),
+    SkapiJson.obj("q", "otter")
+).get();
+```
+
+:::
 
 The answer comes back as a `JsonElement`: parsed JSON, or a `JsonPrimitive` string for text.
 
@@ -50,7 +79,9 @@ Signing in is not required. A signed-out caller is known to the server by IP add
 
 Store the key on skapi.com as a client secret of your project, name it with `secretName`, and put `"$CLIENT_SECRET"` where the value goes: in `url`, or in any string value of `headers`, `data` or `params`, at any depth. In a Kotlin string, write it as `"\$CLIENT_SECRET"`, or the compiler reads it as a template.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val answer = skapi.forwardRequest(jsonOf(
     "secretName" to "my_secret",
     "url" to "https://api.example.com/v1/report",
@@ -61,6 +92,20 @@ val answer = skapi.forwardRequest(jsonOf(
     "data" to jsonOf("report" to "quarterly"),
 ))
 ```
+
+```java [Java]
+Object answer = skapi.forwardRequest(SkapiJson.obj(
+    "secretName", "my_secret",
+    "url", "https://api.example.com/v1/report",
+    "headers", SkapiJson.obj(
+        "Content-Type", "application/json",
+        "Authorization", "Bearer $CLIENT_SECRET"
+    ),
+    "data", SkapiJson.obj("report", "quarterly")
+)).get();
+```
+
+:::
 
 The value is filled in on the server, so it never reaches your code. A locked secret needs a signed-in user whose access group reaches the secret's, and a secret limited to some destinations refuses other URLs. When `"$CLIENT_SECRET"` appears nowhere, skapi-kotlin leaves `secretName` out and sends the request as written.
 
@@ -82,7 +127,9 @@ Skapi's server writes these from the verified caller, so the destination can tru
 
 `"multipart" to true` sends `form` as a `multipart/form-data` body. A file is a `FileUpload`, as on [Files](/database/files#uploading-with-a-record); the form key is the part name, and the file's `filename` and `contentType` are sent with it. A `ByteArray` alone also becomes a file part, named after its key. A list gives one part per item; other values are sent as text (`null` as empty, `true` as `true`, objects and lists as JSON).
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.forwardRequest(
     jsonOf(
         "secretName" to "my_secret",
@@ -96,6 +143,26 @@ skapi.forwardRequest(
     ),
 )
 ```
+
+```java [Java]
+import com.skapi.FileUpload;
+import java.io.File;
+
+skapi.forwardRequest(
+    SkapiJson.obj(
+        "secretName", "my_secret",
+        "url", "https://api.example.com/v1/upload",
+        "headers", SkapiJson.obj("Authorization", "Bearer $CLIENT_SECRET"),
+        "multipart", true
+    ),
+    SkapiJson.obj(
+        "title", "Holiday",
+        "photo", FileUpload.fromFile("photo", new File("beach.jpg"), null, null)
+    )
+).get();
+```
+
+:::
 
 `data` cannot be sent with `multipart`. Nothing is filled in inside a multipart body. The body is capped at 2,031,616 characters once base64 encoded, about 1.5 MB of file: upload bigger files first and send their URL.
 
@@ -111,7 +178,9 @@ Inline answers come back as text or parsed JSON. The destination's status code i
 
 ## Queued requests
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val env = skapi.forwardRequest(jsonOf(
     "secretName" to "openai",
     "url" to "https://api.openai.com/v1/images/generations",
@@ -120,6 +189,18 @@ val env = skapi.forwardRequest(jsonOf(
     "queue" to "images",
 )).jsonObject
 ```
+
+```java [Java]
+Map<String, Object> env = (Map<String, Object>) skapi.forwardRequest(SkapiJson.obj(
+    "secretName", "openai",
+    "url", "https://api.openai.com/v1/images/generations",
+    "headers", SkapiJson.obj("Content-Type", "application/json", "Authorization", "Bearer $CLIENT_SECRET"),
+    "data", SkapiJson.obj("model", "gpt-image-1", "prompt", "A sea otter", "n", 1),
+    "queue", "images"
+)).get();
+```
+
+:::
 
 The envelope:
 
@@ -139,13 +220,25 @@ Keep `request_id`: it is how you read the answer. Queue names cannot contain col
 
 `poll` (milliseconds between checks, `true` for 1000) does the waiting for you. A queue name is made up when you give none.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val result = skapi.forwardRequest(jsonOf(
     "url" to "https://api.example.com/v1/slow-report",
     "data" to jsonOf("report" to "yearly"),
     "poll" to 2000,
 ))
 ```
+
+```java [Java]
+Object result = skapi.forwardRequest(SkapiJson.obj(
+    "url", "https://api.example.com/v1/slow-report",
+    "data", SkapiJson.obj("report", "yearly"),
+    "poll", 2000
+)).get();
+```
+
+:::
 
 The first check goes out after one interval. There is no time limit: the call returns when the request settles. Launch it in its own coroutine if you need to do other work meanwhile, and cancel that coroutine to stop waiting.
 
@@ -159,7 +252,9 @@ What a settled request returns:
 
 [forwardRequestPoll](/api-reference/api-bridge#forwardrequestpoll) waits for a queued request and returns the same values:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val requestId = env["request_id"]!!.jsonPrimitive.content
 val result = skapi.forwardRequestPoll(requestId, pollMillis = 2000)
 
@@ -171,6 +266,21 @@ val again = skapi.forwardRequestPoll(
 )
 ```
 
+```java [Java]
+String requestId = (String) env.get("request_id");
+Object result = skapi.forwardRequestPoll(requestId, 2000).get();
+
+// or with the short id
+Object again = skapi.forwardRequestPoll(
+    (String) env.get("id"),
+    1000,
+    "https://api.openai.com/v1/images/generations",
+    "POST"
+).get();
+```
+
+:::
+
 Only the caller who made a request can read it. A signed-in caller is the user, on any device. A signed-out caller is the IP address and User-Agent pair, so a request made signed out must be polled, cancelled and finalized from the same IP with the same User-Agent; otherwise it is `NOT_EXISTS` (`Request not found.`).
 
 ## Streamed requests
@@ -179,7 +289,9 @@ Only the caller who made a request can read it. A signed-in caller is the user, 
 
 Ask the destination for a streamed answer too: that is part of your own `data`, and Skapi never reads it.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val buffer = StringBuilder()
 val answer = StringBuilder()
 
@@ -215,24 +327,82 @@ val env = skapi.forwardRequest(
 println(env["status"]) // "resolved"
 ```
 
+```java [Java]
+StringBuilder buffer = new StringBuilder();
+StringBuilder answer = new StringBuilder();
+
+Map<String, Object> env = (Map<String, Object>) skapi.forwardRequest(
+    SkapiJson.obj(
+        "secretName", "openai",
+        "url", "https://api.openai.com/v1/chat/completions",
+        "headers", SkapiJson.obj("Content-Type", "application/json", "Authorization", "Bearer $CLIENT_SECRET"),
+        "data", SkapiJson.obj(
+            "model", "gpt-4.1",
+            "stream", true,
+            "messages", SkapiJson.list(SkapiJson.obj("role", "user", "content", "Hi"))
+        ),
+        "stream", true  // Skapi's own flag
+    ),
+    null,
+    (text, seq) -> {
+        buffer.append(text);
+        while (true) {
+            int end = buffer.indexOf("\n\n");
+            if (end < 0) break;
+            String frame = buffer.substring(0, end);
+            buffer.delete(0, end + 2);
+            for (String line : frame.split("\n")) {
+                if (line.startsWith("data: ") && !line.equals("data: [DONE]")) {
+                    Map<String, Object> chunk = (Map<String, Object>) SkapiJson.parse(line.substring(6));
+                    Map<String, Object> choice = (Map<String, Object>) ((List<Object>) chunk.get("choices")).get(0);
+                    Object content = ((Map<String, Object>) choice.get("delta")).get("content");
+                    if (content != null) answer.append(content);
+                }
+            }
+        }
+    }
+).get();
+System.out.println(env.get("status")); // "resolved"
+```
+
+:::
+
 A streamed request settles with the envelope and no body, and with `onStream` the envelope also carries `stream`, `chunks`, `last_seq` and `more`. A failed one has `"status": "failed"` and an `error` object, and keeps the text that did arrive (without `onStream` you get the `error` object alone). It is not thrown.
 
 ### Reading a stream again
 
 [forwardRequestStream](/api-reference/api-bridge#forwardrequeststream) reads a streamed request from the start, or after `since`: while it runs it hands new text to `onStream`; once it has settled it hands over all the stored text and returns the envelope; once it is finalized it returns the kept body.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.forwardRequestStream(requestId, jsonOf("poll" to 1000), onStream = onStream)
 ```
+
+```java [Java]
+// onStream: a BiConsumer<String, Integer>
+skapi.forwardRequestStream(requestId, SkapiJson.obj("poll", 1000), onStream).get();
+```
+
+:::
 
 ### Keeping the answer
 
 Until you finalize it, a streamed request keeps every piece and its history has no answer. [forwardRequestFinalize](/api-reference/api-bridge#forwardrequestfinalize) stores what you pass as its answer and releases the pieces; later polls return that value. Finalizing again replaces it. Calling it without `data` stores `null` and still releases the pieces.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.forwardRequestFinalize(requestId, JsonPrimitive(answer.toString()))
 // {"finalized": true, "message": "Finalized."}
 ```
+
+```java [Java]
+skapi.forwardRequestFinalize(requestId, answer.toString()).get();
+// {"finalized": true, "message": "Finalized."}
+```
+
+:::
 
 Only a settled request can be finalized. After three failed reads of the pieces in a row on a settled request, the read gives up and returns what it has, so check your text is complete before you finalize it.
 
@@ -240,7 +410,9 @@ Only a settled request can be finalized. After three failed reads of the pieces 
 
 [forwardRequestHistory](/api-reference/api-bridge#forwardrequesthistory) lists your requests to one `url` and `method` (upper case), with their answers:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val history = skapi.forwardRequestHistory(jsonOf(
     "url" to "https://api.openai.com/v1/images/generations",
     "method" to "POST",
@@ -258,11 +430,33 @@ for (entry in history["list"]!!.jsonArray) {
 }
 ```
 
+```java [Java]
+Map<String, Object> history = skapi.forwardRequestHistory(SkapiJson.obj(
+    "url", "https://api.openai.com/v1/images/generations",
+    "method", "POST",
+    "status", "pending", // optional: "pending", "running", "resolved", "failed"
+    "queue", "images"    // optional, matches as a prefix; add "queue_exact", true for this queue only
+)).get();
+
+for (Object entry : (List<Object>) history.get("list")) {
+    Map<String, Object> item = (Map<String, Object>) entry;
+    String status = (String) item.get("status");
+    System.out.println(status + " " + item.get("status_code") + " " + item.get("created"));
+    if ("pending".equals(status) || "running".equals(status)) {
+        System.out.println(skapi.forwardRequestPoll((String) item.get("request_id")).get());
+    }
+}
+```
+
+:::
+
 `"compact" to true` leaves the bodies out and gives short `request_text` and `response_text` instead. The listing pages like [getRecords](/database/fetch#paging).
 
 ## Cancelling and counting
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.cancelForwardRequest(jsonOf(
     "url" to "https://api.openai.com/v1/images/generations",
     "method" to "POST",
@@ -273,5 +467,19 @@ skapi.cancelForwardRequest(jsonOf(
 skapi.forwardRequestQueueCount(jsonOf("queue" to "images"))
 // {"queue_name": "images", "in_queue": 3}   signed-in users only
 ```
+
+```java [Java]
+skapi.cancelForwardRequest(SkapiJson.obj(
+    "url", "https://api.openai.com/v1/images/generations",
+    "method", "POST",
+    "id", env.get("id")
+)).get();
+// {"removed": true, "message": "Cancelled."}
+
+skapi.forwardRequestQueueCount(SkapiJson.obj("queue", "images")).get();
+// {"queue_name": "images", "in_queue": 3}   signed-in users only
+```
+
+:::
 
 Cancel takes the short `id`, and only reaches a request that is still `pending` or `running`. Cancelling a streamed request discards its pieces.

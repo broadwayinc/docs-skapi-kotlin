@@ -15,9 +15,17 @@ Values that fail a check throw `INVALID_PARAMETER` before anything is sent. The 
 
 ## signup
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun signup(params: JsonObject, option: JsonObject? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> signup(Map<String, ?> params, Map<String, ?> option)  // option can be left out
+```
+
+:::
 
 Creates an account. Logs out the user signed in on this object first.
 
@@ -67,9 +75,17 @@ Returns a string (a `JsonPrimitive`): `"SUCCESS: The account has been created."`
 
 ## resendSignupConfirmation
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun resendSignupConfirmation(): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> resendSignupConfirmation()
+```
+
+:::
 
 Sends the signup confirmation e-mail again. Works after `login()` threw `SIGNUP_CONFIRMATION_NEEDED`, or after `signup()` with `signup_confirmation`, on the same object. Returns `"SUCCESS: Signup confirmation e-mail has been sent."`
 
@@ -79,9 +95,17 @@ Sends the signup confirmation e-mail again. Works after `login()` threw `SIGNUP_
 
 ## login
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun login(email: String? = null, password: String, username: String? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> login(String email, String password, String username)  // username can be left out; email can be null
+```
+
+:::
 
 Signs in and returns the [profile](/authentication/profile#profile-fields). The e-mail is matched without regard to case. An `email` that is not an e-mail address is read as a username; `login(username = "ana", password = "...")` names it outright. The password is never sent: sign-in proves it with a secure exchange. The session is saved to `storage`.
 
@@ -99,9 +123,17 @@ Signs in and returns the [profile](/authentication/profile#profile-fields). The 
 
 ## verifyMfa
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun verifyMfa(code: String): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> verifyMfa(String code)
+```
+
+:::
 
 Finishes a `login()` or `openIdLogin()` that threw `MFA_REQUIRED`, with the 6 digit code from the authenticator app (spaces are ignored). Call it on the same object within 3 minutes. Returns the profile. See [Two-Step Login](/authentication/mfa).
 
@@ -115,33 +147,65 @@ Finishes a `login()` or `openIdLogin()` that threw `MFA_REQUIRED`, with the 6 di
 
 ## logout
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun logout(globalLogout: Boolean = false): String
 ```
+
+```java [Java]
+CompletableFuture<String> logout(boolean globalLogout)  // globalLogout can be left out (false)
+```
+
+:::
 
 Signs out and removes the session from `storage` (and the user's entry from a [device key store](/introduction/android#remember-this-device-for-record-encryption)). `globalLogout = true` also ends every session of the account on every device. On an anonymous account it deletes the account. Returns `"SUCCESS: The user has been logged out."`
 
 ## getProfile
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getProfile(refreshToken: Boolean = false): JsonObject?
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getProfile(boolean refreshToken)  // refreshToken can be left out (false)
+```
+
+:::
 
 The signed-in user's profile, or `null`. The first call restores a sign-in saved in `storage`. `refreshToken = true` gets fresh tokens from the server first and returns `null` if that fails.
 
 ## user
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val user: JsonObject?
 ```
+
+```java [Java]
+Map<String, Object> getUser()
+```
+
+:::
 
 The signed-in user's profile as this object last saw it (a copy), or `null`. It does not read `storage`: after the app starts, call [getProfile](#getprofile) once to restore a saved sign-in. `skapi.session` holds the tokens: `idToken`, `accessToken`, `refreshToken`.
 
 ## loginWithToken
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun loginWithToken(idToken: String, accessToken: String, refreshToken: String): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> loginWithToken(String idToken, String accessToken, String refreshToken)
+```
+
+:::
 
 Takes over the tokens of a sign-in made elsewhere (for example skapi-js on a web page) and returns the profile read from the ID token. All three tokens are required; the object is then signed in as that user and the tokens are saved to `storage`. The token's signature is not checked locally; the server checks it on each request.
 
@@ -152,9 +216,17 @@ Takes over the tokens of a sign-in made elsewhere (for example skapi-js on a web
 
 ## updateProfile
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun updateProfile(params: JsonObject): JsonObject?
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> updateProfile(Map<String, ?> params)
+```
+
+:::
 
 Changes the signed-in user's own profile and returns the updated profile. Takes the same profile keys as [signup](#signup) except `password` and `username`. `""` clears a field (not `email`). The `*_public` flags must be booleans. Other keys are ignored; with nothing to change, it returns the profile without a request. A changed `email` becomes unverified.
 
@@ -167,9 +239,17 @@ Changes the signed-in user's own profile and returns the updated profile. Takes 
 
 ## changePassword
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun changePassword(currentPassword: String, newPassword: String): String
 ```
+
+```java [Java]
+CompletableFuture<String> changePassword(String currentPassword, String newPassword)
+```
+
+:::
 
 Returns `"SUCCESS: Password has been changed."`
 
@@ -185,9 +265,17 @@ Returns `"SUCCESS: Password has been changed."`
 
 ## forgotPassword
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun forgotPassword(email: String, template: JsonObject? = null): String
 ```
+
+```java [Java]
+CompletableFuture<String> forgotPassword(String email, Map<String, ?> template)  // template can be left out
+```
+
+:::
 
 E-mails a password reset code. `template = jsonOf("forgot_password" to "<message_id>")` uses an uploaded template for this call. Returns `"SUCCESS: Verification code has been sent."`
 
@@ -202,17 +290,33 @@ E-mails a password reset code. `template = jsonOf("forgot_password" to "<message
 
 ## resetPassword
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun resetPassword(email: String, code: String, newPassword: String): String
 ```
+
+```java [Java]
+CompletableFuture<String> resetPassword(String email, String code, String newPassword)
+```
+
+:::
 
 Sets a new password with the code from `forgotPassword()`. Returns `"SUCCESS: New password has been set."` A wrong or expired code throws the server's code and message, for example `CodeMismatchException`. The e-mail and the new password are checked like at [signup](#signup).
 
 ## verifyEmail
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun verifyEmail(code: String? = null, template: JsonObject? = null): String
 ```
+
+```java [Java]
+CompletableFuture<String> verifyEmail(String code, Map<String, ?> template)  // code and template can be left out
+```
+
+:::
 
 Without `code`, e-mails a verification code and returns `"SUCCESS: Verification code has been sent."` With `code`, verifies the e-mail and returns `SUCCESS: "email" is verified.`, which is also returned at once when the e-mail is already verified. `template = jsonOf("verification" to "<message_id>")` uses an uploaded template for the code e-mail.
 
@@ -226,9 +330,17 @@ Without `code`, e-mails a verification code and returns `"SUCCESS: Verification 
 
 ## lastVerifiedEmail
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun lastVerifiedEmail(revert: Boolean? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> lastVerifiedEmail(Boolean revert)  // revert can be left out
+```
+
+:::
 
 Returns the user's last verified e-mail as a string (the current one, if it is verified). `revert = true` switches the account back to that e-mail, verified, and returns the updated profile as a `JsonObject`.
 
@@ -240,9 +352,17 @@ Returns the user's last verified e-mail as a string (the current one, if it is v
 
 ## disableAccount
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun disableAccount(): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> disableAccount()
+```
+
+:::
 
 Disables the signed-in user's account and logs out. The account's data is deleted after 90 days unless it is recovered. Returns `"SUCCESS: account has been disabled."`
 
@@ -252,9 +372,17 @@ Disables the signed-in user's account and logs out. The account's data is delete
 
 ## recoverAccount
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun recoverAccount(redirect: String? = null): String
 ```
+
+```java [Java]
+CompletableFuture<String> recoverAccount(String redirect)  // redirect can be left out
+```
+
+:::
 
 After `login()` threw `USER_IS_DISABLED` on this object, e-mails a recovery link to the account. A full URL in `redirect` is where the link leads after the recovery. Returns `"SUCCESS: Recovery e-mail has been sent."`
 
@@ -265,9 +393,17 @@ After `login()` threw `USER_IS_DISABLED` on this object, e-mails a recovery link
 
 ## openIdLogin
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun openIdLogin(token: String, id: String, merge: JsonElement? = null, template: JsonObject? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> openIdLogin(String token, String id, Object merge, Map<String, ?> template)  // merge (true, a name or a List of names) and template can be left out
+```
+
+:::
 
 Signs in through the OpenID logger `id` with a token from the provider, creating the account on first use. `merge = JsonPrimitive(true)` merges into an existing account with the same login ID; a `JsonArray` of attribute names (or one name as a string) also copies those OpenID attributes. `template = jsonOf("welcome" to "<message_id>")` uses an uploaded template for the welcome e-mail.
 
@@ -283,9 +419,17 @@ Returns `{"userProfile": {...}, "openid": {...}}`. Can throw `MFA_REQUIRED`, `US
 
 ## anonymousLogin
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun anonymousLogin(): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> anonymousLogin()
+```
+
+:::
 
 Signs in with a temporary account (`"anonymous": true`, access group `1`) and returns its profile. Returns the current account when this object already holds an anonymous session. Sends a keep-alive every 10 minutes while the object lives; the account is deleted 30 minutes after the last one, or at once on `logout()`. See [Anonymous Login](/authentication/anonymous).
 
@@ -297,25 +441,49 @@ Signs in with a temporary account (`"anonymous": true`, access group `1`) and re
 
 ## verifyAnonymousSession
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun verifyAnonymousSession(): JsonObject?
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> verifyAnonymousSession()
+```
+
+:::
 
 For a temporary account restored from `storage`: asks the server whether it still exists. Returns the profile, or `null` (after signing out) when the account was deleted. Any other signed-in user is returned as is, without a request; signed out returns `null`.
 
 ## setupMfa
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun setupMfa(issuer: String? = null, accountName: String? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> setupMfa(String issuer, String accountName)  // issuer and accountName can be left out
+```
+
+:::
 
 Starts two-step login setup. Returns `{"secret": "...", "uri": "..."}`: show `uri` (`otpauth://...`) as a QR code, or `secret` for typing in. `issuer` defaults to the project name, `accountName` to the user's e-mail. Follow with [enableMfa](#enablemfa).
 
 ## enableMfa
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun enableMfa(code: String): String
 ```
+
+```java [Java]
+CompletableFuture<String> enableMfa(String code)
+```
+
+:::
 
 Checks a code from the app and turns two-step login on. Returns `"SUCCESS: MFA has been enabled."`
 
@@ -328,17 +496,33 @@ Checks a code from the app and turns two-step login on. Returns `"SUCCESS: MFA h
 
 ## disableMfa
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun disableMfa(): String
 ```
+
+```java [Java]
+CompletableFuture<String> disableMfa()
+```
+
+:::
 
 Turns two-step login off. Returns `"SUCCESS: MFA has been disabled."`
 
 ## getMfaStatus
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getMfaStatus(): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getMfaStatus()
+```
+
+:::
 
 Returns `{"enabled": true}` or `{"enabled": false}`.
 

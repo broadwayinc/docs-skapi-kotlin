@@ -4,7 +4,9 @@ Needs `Skapi("<Project ID>", encryption = EncryptionOptions(...))`. No extra dep
 
 ## EncryptionOptions
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 public class EncryptionOptions(
     public val iterations: Int = 600000,
     public val trustPolicy: String = "tofu",
@@ -15,6 +17,20 @@ public class EncryptionOptions(
     public val deviceKeyStore: DeviceKeyStore? = null,
 )
 ```
+
+```java [Java]
+EncryptionOptions encryption = new EncryptionOptionsBuilder()
+    .iterations(600000)
+    .trustPolicy("tofu")
+    .withheld("null")
+    .recovery("code")
+    .table("__skapi__keyring")
+    .persistDevice(true)
+    .deviceKeyStore(null)
+    .build();  // starts from these defaults: set only the ones you change
+```
+
+:::
 
 | property | default | |
 |---|---|---|
@@ -34,7 +50,9 @@ Any other value of `trustPolicy`, `withheld` or `recovery` is read as the defaul
 
 ## DeviceKeyStore
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 public interface DeviceKeyStore {
     public fun save(entry: String, masterKey: ByteArray, keyringRecordId: String)
     public fun load(entry: String): DeviceKey?
@@ -44,13 +62,37 @@ public interface DeviceKeyStore {
 public class DeviceKey(public val masterKey: ByteArray, public val keyringRecordId: String)
 ```
 
+```java [Java]
+public interface DeviceKeyStore {
+    void save(String entry, byte[] masterKey, String keyringRecordId);
+    DeviceKey load(String entry);  // or null
+    void delete(String entry);
+}
+
+public final class DeviceKey {
+    public DeviceKey(byte[] masterKey, String keyringRecordId)
+    public byte[] getMasterKey()
+    public String getKeyringRecordId()
+}
+```
+
+:::
+
 A store for the encryption master key: "remember this device". Entries are named `"<service>/<owner>#<user_id>"`. The core library has none on purpose, since a plain file would put the key on disk in the clear; skapi-android provides `AndroidKeystoreDeviceKeyStore`, which seals it with a key that never leaves the Android Keystore. An exception thrown by `save` or `delete` is logged, not passed on.
 
 ## getEncryptionStatus
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getEncryptionStatus(): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getEncryptionStatus()
+```
+
+:::
 
 ```json
 {"status": "disabled"}
@@ -62,9 +104,17 @@ suspend fun getEncryptionStatus(): JsonObject
 
 ## unlockEncryption
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun unlockEncryption(password: String): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> unlockEncryption(String password)
+```
+
+:::
 
 Opens the keyring with the password. Returns `{"status": "unlocked"}`. It never sets encryption up: that happens at the first login with the password, so an account that has never logged in with its password gets `NOT_EXISTS`. With a device key store, the key is kept there too.
 
@@ -80,9 +130,18 @@ Opens the keyring with the password. Returns `{"status": "unlocked"}`. It never 
 
 ## lockEncryption
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun lockEncryption(forgetDevice: Boolean = false): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> lockEncryption(boolean forgetDevice)
+// also lockEncryption()
+```
+
+:::
 
 Forgets the keys in memory. Returns `{"status": "locked"}`, or `{"status": "disabled"}`. An encryption recovery code not collected yet is kept: the next `getConnectionInfo()` still returns it, once.
 
@@ -94,9 +153,17 @@ Forgets the keys in memory. Returns `{"status": "locked"}`, or `{"status": "disa
 
 ## isWithheld
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 fun isWithheld(value: JsonElement?): Boolean
 ```
+
+```java [Java]
+boolean isWithheld(Object value)  // a plain Java value, such as a record's "data"
+```
+
+:::
 
 `true` for the `"sentinel"` placeholder of undecryptable data. Not a `suspend` function.
 
@@ -106,9 +173,18 @@ Shown once, in [getConnectionInfo](/api-reference/connection#getconnectioninfo) 
 
 ## unlockEncryptionWithRecoveryCode
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun unlockEncryptionWithRecoveryCode(code: String, password: String? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> unlockEncryptionWithRecoveryCode(String code, String password)
+// also unlockEncryptionWithRecoveryCode(code)
+```
+
+:::
 
 Unlocks encryption with the saved encryption recovery code, for a user signed in after a password reset. With `password`, the keyring opens with that password from now on. The code is replaced by a new one.
 
@@ -126,9 +202,17 @@ Unlocks encryption with the saved encryption recovery code, for a user signed in
 
 ## regenerateEncryptionRecoveryCode
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun regenerateEncryptionRecoveryCode(): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> regenerateEncryptionRecoveryCode()
+```
+
+:::
 
 A new encryption recovery code, `{"encryptionRecoveryCode": "..."}`; the old one stops working. Needs encryption unlocked.
 
@@ -140,9 +224,17 @@ A new encryption recovery code, `{"encryptionRecoveryCode": "..."}`; the old one
 
 ## pinPeerKey
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun pinPeerKey(userId: String, fingerprint: String): Unit
 ```
+
+```java [Java]
+CompletableFuture<Void> pinPeerKey(String userId, String fingerprint)  // completes with null
+```
+
+:::
 
 Trusts `fingerprint` as `userId`'s key for sharing, saved in the keyring. Throws `ENCRYPTION_LOCKED` (`Encryption is locked.`) when not unlocked.
 

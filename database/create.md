@@ -65,18 +65,31 @@ Data larger than 32 KB is kept in file storage instead of the database. You do n
 
 ## Read-only records
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val rec = skapi.postRecord(
     jsonOf("order" to 1042, "total" to 59.0),
     jsonOf("table" to jsonOf("name" to "orders", "access_group" to "private"), "readonly" to true),
 )
 ```
 
+```java [Java]
+Map<String, Object> rec = skapi.postRecord(
+    SkapiJson.obj("order", 1042, "total", 59.0),
+    SkapiJson.obj("table", SkapiJson.obj("name", "orders", "access_group", "private"), "readonly", true)
+).get();
+```
+
+:::
+
 A read-only record cannot be updated or deleted by its uploader. An update throws `INVALID_REQUEST`: `Record is read only.`
 
 ## Tags, index and unique ID
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.postRecord(
     jsonOf("title" to "Getz/Gilberto", "artist" to "Stan Getz, Joao Gilberto"),
     jsonOf(
@@ -88,11 +101,27 @@ skapi.postRecord(
 )
 ```
 
+```java [Java]
+skapi.postRecord(
+    SkapiJson.obj("title", "Getz/Gilberto", "artist", "Stan Getz, Joao Gilberto"),
+    SkapiJson.obj(
+        "table", SkapiJson.obj("name", "albums", "access_group", "public"),
+        "unique_id", "album:getz-gilberto",
+        "index", SkapiJson.obj("name", "year", "value", 1964),
+        "tags", SkapiJson.list("jazz", "bossa nova")
+    )
+).get();
+```
+
+:::
+
 Each record has at most one index and any number of tags. How to query them is in [Indexes, Tags and Unique IDs](/database/index-tags).
 
 ## Reference and source
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val post = skapi.postRecord(
     jsonOf("text" to "What do you think?"),
     jsonOf(
@@ -109,6 +138,26 @@ skapi.postRecord(
     ),
 )
 ```
+
+```java [Java]
+Map<String, Object> post = skapi.postRecord(
+    SkapiJson.obj("text", "What do you think?"),
+    SkapiJson.obj(
+        "table", SkapiJson.obj("name", "posts", "access_group", "public"),
+        "source", SkapiJson.obj("prevent_multiple_referencing", true)
+    )
+).get();
+
+skapi.postRecord(
+    SkapiJson.obj("text", "I like it"),
+    SkapiJson.obj(
+        "table", SkapiJson.obj("name", "comments", "access_group", "public"),
+        "reference", post.get("record_id")
+    )
+).get();
+```
+
+:::
 
 See [References](/database/reference).
 

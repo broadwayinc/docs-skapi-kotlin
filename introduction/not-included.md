@@ -26,7 +26,9 @@ Pass `JsonObject` values for data, and [`FileUpload`](/database/files) values fo
 
 `stopForwardRequestPolling()` and `isPollStopped()` are not included. In skapi-kotlin, a method that waits for a queued or streamed answer is a `suspend` function: cancel the coroutine that waits and the polling stops.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 val job = lifecycleScope.launch {
     val answer = skapi.forwardRequestPoll(requestId)
     show(answer)
@@ -35,6 +37,16 @@ val job = lifecycleScope.launch {
 // later, to stop waiting:
 job.cancel()
 ```
+
+```java [Java]
+CompletableFuture<Object> waiting = skapi.forwardRequestPoll(requestId);
+waiting.thenAccept(answer -> runOnUiThread(() -> show(answer)));
+
+// later, to stop waiting:
+waiting.cancel(true);
+```
+
+:::
 
 ## Playground and test endpoints
 

@@ -6,7 +6,9 @@ The signed-in user's profile is a `JsonObject`, available as `skapi.user` and fr
 
 [`updateProfile()`](/api-reference/authentication#updateprofile) changes the signed-in user's own profile and returns the updated profile.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 import com.skapi.Skapi
 import com.skapi.SkapiException
 import com.skapi.jsonOf
@@ -19,11 +21,33 @@ val user = skapi.updateProfile(jsonOf("name" to "Ana", "nickname" to "ana"))
 println(user!!["name"]!!.jsonPrimitive.content)  // Ana
 ```
 
+```java [Java]
+import com.skapi.java.SkapiJava;
+import com.skapi.java.SkapiJson;
+import java.util.Map;
+
+SkapiJava skapi = new SkapiJava("<Project ID>");
+skapi.login("user@example.com", "password").get();
+
+Map<String, Object> user = skapi.updateProfile(SkapiJson.obj("name", "Ana", "nickname", "ana")).get();
+System.out.println(user.get("name"));  // Ana
+```
+
+:::
+
 Pass only the fields you want to change. An empty string `""` clears a field:
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.updateProfile(jsonOf("nickname" to ""))
 ```
+
+```java [Java]
+skapi.updateProfile(SkapiJson.obj("nickname", "")).get();
+```
+
+:::
 
 `email` cannot be cleared. A changed e-mail becomes unverified until the user [verifies](/authentication/email-verification) it.
 
@@ -61,9 +85,17 @@ Fields set by Skapi, which the user cannot change:
 
 `email`, `phone_number`, `address`, `gender` and `birthdate` are private by default. Set the matching `*_public` flag to `true` to let other users see that field when they [search users](/users/search).
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 skapi.updateProfile(jsonOf("gender" to "female", "gender_public" to true))
 ```
+
+```java [Java]
+skapi.updateProfile(SkapiJson.obj("gender", "female", "gender_public", true)).get();
+```
+
+:::
 
 The flags are `email_public`, `phone_number_public`, `address_public`, `gender_public` and `birthdate_public`, and must be `true` or `false`. A flag appears in the profile only when its field is set. `"email_public" to true` needs a verified e-mail, or it throws `INVALID_REQUEST`.
 
@@ -71,15 +103,25 @@ The flags are `email_public`, `phone_number_public`, `address_public`, `gender_p
 
 A user who leaves your project can disable their own account with [`disableAccount()`](/api-reference/authentication#disableaccount). They are logged out at once, and all data of the account is deleted after 90 days.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 println(skapi.disableAccount())  // "SUCCESS: account has been disabled."
 ```
+
+```java [Java]
+System.out.println(skapi.disableAccount().get());  // SUCCESS: account has been disabled.
+```
+
+:::
 
 ## Recovering a disabled account
 
 Within those 90 days, logging in to a disabled account throws `USER_IS_DISABLED`. Call [`recoverAccount()`](/api-reference/authentication#recoveraccount) on the same `Skapi` object to send the user an e-mail with a recovery link. Opening the link reactivates the account.
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 try {
     skapi.login("user@example.com", "password")
 } catch (err: SkapiException) {
@@ -90,5 +132,23 @@ try {
     }
 }
 ```
+
+```java [Java]
+import com.skapi.SkapiException;
+import java.util.concurrent.ExecutionException;
+
+try {
+    skapi.login("user@example.com", "password").get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    if ("USER_IS_DISABLED".equals(err.getCode())) {
+        System.out.println(skapi.recoverAccount().get());  // SUCCESS: Recovery e-mail has been sent.
+    } else {
+        throw err;
+    }
+}
+```
+
+:::
 
 Pass a full URL, `recoverAccount("https://your.site/welcome-back")`, to have the link lead there after the recovery. The account can only be recovered when its e-mail is verified and the user knows their password.

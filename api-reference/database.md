@@ -25,7 +25,9 @@ These can come from any method below that takes the input or needs the state.
 
 ## FetchOptions
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 public class FetchOptions(
     public val limit: Int? = null,
     public val ascending: Boolean? = null,
@@ -33,6 +35,17 @@ public class FetchOptions(
     public val fetchMore: Boolean = false,
 )
 ```
+
+```java [Java]
+FetchOptions fetchOptions = new FetchOptionsBuilder()
+    .limit(100)           // int
+    .ascending(false)     // boolean
+    .startKey("start")    // Object: an earlier answer's "startKey" (a Map), "start" or "end"
+    .fetchMore(true)      // boolean
+    .build();             // leave out any setting you do not need
+```
+
+:::
 
 | property | |
 |---|---|
@@ -45,12 +58,24 @@ See [Paging](/database/fetch#paging). Methods that take it return `{"list": [...
 
 ## FileUpload
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 FileUpload.fromFile(name: String, file: File, filename: String? = null, contentType: String? = null): FileUpload
 FileUpload.fromBytes(name: String, bytes: ByteArray, filename: String, contentType: String? = null): FileUpload
 FileUpload.fromStream(name: String, stream: InputStream, filename: String, contentType: String? = null): FileUpload
 FileUpload.fromText(name: String, text: String, filename: String, contentType: String? = null): FileUpload
 ```
+
+```java [Java]
+FileUpload.fromFile(String name, File file, String filename, String contentType)
+FileUpload.fromBytes(String name, byte[] bytes, String filename, String contentType)
+FileUpload.fromStream(String name, InputStream stream, String filename, String contentType)
+FileUpload.fromText(String name, String text, String filename, String contentType)
+// Java passes every argument: null for a left-out filename (fromFile) or contentType
+```
+
+:::
 
 A file to attach to a record ([postRecord](#postrecord), [uploadFiles](#uploadfiles)) or to send in a multipart [forwardRequest](/api-reference/api-bridge#forwardrequest).
 
@@ -65,10 +90,20 @@ The content is read when the upload starts. See [Files](/database/files#uploadin
 
 ## postRecord
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun postRecord(data: JsonElement?, config: JsonObject, files: List<FileUpload>? = null): JsonObject
 suspend fun postRecord(config: JsonObject, files: List<FileUpload>? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> postRecord(Object data, Map<String, ?> config, List<FileUpload> files)
+CompletableFuture<Map<String, Object>> postRecord(Map<String, ?> config, List<FileUpload> files)
+// also postRecord(data, config) and postRecord(config)
+```
+
+:::
 
 Creates a record, or updates the one named by `config["record_id"]`. Returns the saved record. The second overload keeps the stored data: use it to update only the config or attach files. See [Creating Records](/database/create) and [Updating](/database/update-delete).
 
@@ -119,9 +154,17 @@ A file that storage refuses after the record is saved throws nothing.
 
 ## postRecords
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun postRecords(items: List<JsonObject>): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> postRecords(List<? extends Map<String, ?>> items)
+```
+
+:::
 
 Saves many records, 100 to a request. Each item is `{"data"?: ..., "config": {...}}` with the keys of [postRecord](#postrecord); files are not supported. Returns:
 
@@ -142,9 +185,18 @@ A refused item is listed in `failed` with the error `postRecord` would have thro
 
 ## getRecords
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getRecords(query: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getRecords(Map<String, ?> query, FetchOptions fetchOptions)
+// also getRecords() and getRecords(query)
+```
+
+:::
 
 Returns `{"list": [record, ...], "startKey", "endOfList", "startKeyHistory"}`. See [Fetching Records](/database/fetch).
 
@@ -176,9 +228,18 @@ A warning in the log (logger `skapi`), not an error: `table` written as a string
 
 ## deleteRecords
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun deleteRecords(query: JsonObject, fetchOptions: FetchOptions? = null): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> deleteRecords(Map<String, ?> query, FetchOptions fetchOptions)
+// also deleteRecords(query)
+```
+
+:::
 
 Signed-in only. Deletes your records, and their files, by:
 
@@ -201,9 +262,18 @@ Returns the server's message as a string, such as `SUCCESS: records are being de
 
 ## getTables
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getTables(query: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getTables(Map<String, ?> query, FetchOptions fetchOptions)
+// also getTables() and getTables(query)
+```
+
+:::
 
 No sign-in needed. Lists tables. See [getTables](/database/index-tags#gettables).
 
@@ -222,9 +292,18 @@ Each item: `{"table", "number_of_records", "size", "number_of_records_in_access_
 
 ## getTags
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getTags(query: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getTags(Map<String, ?> query, FetchOptions fetchOptions)
+// also getTags() and getTags(query)
+```
+
+:::
 
 No sign-in needed. Lists tags. See [getTags](/database/index-tags#gettags).
 
@@ -244,9 +323,18 @@ With no query at all: every tag in the project, most used first. Each item: `{"t
 
 ## getIndexes
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getIndexes(query: JsonObject, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getIndexes(Map<String, ?> query, FetchOptions fetchOptions)
+// also getIndexes(query)
+```
+
+:::
 
 No sign-in needed. Lists the indexes of a table. See [getIndexes](/database/index-tags#getindexes).
 
@@ -271,9 +359,18 @@ Each item: `{"table", "index", "number_of_records", "number_count", "boolean_cou
 
 ## getUniqueId
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getUniqueId(query: JsonObject? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getUniqueId(Map<String, ?> query, FetchOptions fetchOptions)
+// also getUniqueId() and getUniqueId(query)
+```
+
+:::
 
 No sign-in needed. Lists unique IDs. See [getUniqueId](/database/index-tags#getuniqueid).
 
@@ -293,9 +390,18 @@ Each item: `{"unique_id", "record_id"}`.
 
 ## uploadFiles
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun uploadFiles(files: List<FileUpload>, recordId: String, service: String? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> uploadFiles(List<FileUpload> files, String recordId, String service)
+// also uploadFiles(files, recordId)
+```
+
+:::
 
 Attaches files to an existing record you can write. `files` is the same list as `files` on [postRecord](#postrecord). Returns:
 
@@ -319,9 +425,17 @@ Files go up one at a time; a refused file does not stop the rest. See [Adding fi
 
 ## getFile
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getFile(url: String): ByteArray
 ```
+
+```java [Java]
+CompletableFuture<byte[]> getFile(String url)
+```
+
+:::
 
 Reads a record file by its `url` and returns its bytes. An encrypted attachment is opened when its record's key is at hand. See [Downloading files](/database/files#downloading-files).
 
@@ -335,17 +449,34 @@ Reads a record file by its `url` and returns its bytes. An encrypted attachment 
 
 ## getFileText
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getFileText(url: String): String
 ```
+
+```java [Java]
+CompletableFuture<String> getFileText(String url)
+```
+
+:::
 
 Reads a record file and returns it as UTF-8 text. Errors as [getFile](#getfile).
 
 ## getFileUrl
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getFileUrl(url: String, expiresSeconds: Long = 0): String
 ```
+
+```java [Java]
+CompletableFuture<String> getFileUrl(String url, long expiresSeconds)
+// also getFileUrl(url)
+```
+
+:::
 
 A URL to open the file with. With `expiresSeconds` above 0, a signed link that works without sign-in for that many seconds; making it needs a signed-in user with access to the file. A link that is already signed is returned as it is. See [Links that work without sign-in](/database/files#links-that-work-without-sign-in).
 
@@ -360,9 +491,17 @@ A URL to open the file with. With `expiresSeconds` above 0, a signed link that w
 
 ## getFileInfo
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun getFileInfo(url: String): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> getFileInfo(String url)
+```
+
+:::
 
 What a file URL says, without downloading: `{"url", "filename", "fileKey", "access_group", "uploader", "record_id", "filesize", "uploaded"}`.
 
@@ -374,17 +513,34 @@ What a file URL says, without downloading: `{"url", "filename", "fileKey", "acce
 
 ## downloadFile
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun downloadFile(url: String, destination: File, expiresSeconds: Long = 0): File
 ```
+
+```java [Java]
+CompletableFuture<File> downloadFile(String url, File destination, long expiresSeconds)
+// also downloadFile(url, destination)
+```
+
+:::
 
 Downloads a record file to `destination` (an existing file is overwritten) and returns it as an absolute `File`. With `expiresSeconds`, the file is downloaded through a signed link. Errors as [getFileUrl](#getfileurl).
 
 ## deleteFiles
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun deleteFiles(endpoints: List<String>): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> deleteFiles(List<String> endpoints)
+```
+
+:::
 
 Signed-in only. Deletes files by URL (up to 1000, from any records) and returns the updated records. A URL with a `?t=` token (a file that is not public, or a link from `getFileUrl`) is turned back into the file's stored address, so names with spaces or non-English characters work. If any file is refused, none is deleted. See [Deleting files by URL](/database/files#deleting-files-by-url).
 
@@ -400,9 +556,17 @@ Signed-in only. Deletes files by URL (up to 1000, from any records) and returns 
 
 ## grantPrivateRecordAccess
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun grantPrivateRecordAccess(recordId: String, userIds: List<String>): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> grantPrivateRecordAccess(String recordId, List<String> userIds)
+```
+
+:::
 
 Signed-in only. Lets up to 100 users read one of your private records. Returns the server's message. An [encrypted](/database/encryption#sharing-a-record) record gets a key wrap for each new user first. See [Granting access](/database/private#granting-access).
 
@@ -417,9 +581,17 @@ Signed-in only. Lets up to 100 users read one of your private records. Returns t
 
 ## removePrivateRecordAccess
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun removePrivateRecordAccess(recordId: String, userIds: List<String>): JsonElement
 ```
+
+```java [Java]
+CompletableFuture<Object> removePrivateRecordAccess(String recordId, List<String> userIds)
+```
+
+:::
 
 Signed-in only. Same arguments and client errors as [grantPrivateRecordAccess](#grantprivaterecordaccess). Returns the server's message. The user cannot get a new private access key for the record after this, and a key they already hold stops working when it expires (within 1 hour).
 
@@ -427,9 +599,18 @@ On an [encrypted](/database/encryption#sharing-a-record) record, the record's ke
 
 ## listPrivateRecordAccess
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun listPrivateRecordAccess(recordId: String? = null, userIds: List<String>? = null, fetchOptions: FetchOptions? = null): JsonObject
 ```
+
+```java [Java]
+CompletableFuture<Map<String, Object>> listPrivateRecordAccess(String recordId, List<String> userIds, FetchOptions fetchOptions)
+// also listPrivateRecordAccess(), listPrivateRecordAccess(recordId) and listPrivateRecordAccess(recordId, userIds)
+```
+
+:::
 
 Signed-in only. Who can read a private record (`recordId`), or which private records users can read (`userIds`); at least one. Each item in `list` has `record_id` and `user_id`. See [Listing grants](/database/private#listing-grants).
 
@@ -442,9 +623,18 @@ Signed-in only. Who can read a private record (`recordId`), or which private rec
 
 ## requestPrivateRecordAccessKey
 
-```kotlin
+::: code-group
+
+```kotlin [Kotlin]
 suspend fun requestPrivateRecordAccessKey(recordId: String, referenceId: String? = null): String
 ```
+
+```java [Java]
+CompletableFuture<String> requestPrivateRecordAccessKey(String recordId, String referenceId)
+// also requestPrivateRecordAccessKey(recordId)
+```
+
+:::
 
 Signed-in only. Returns the key that opens the record's private files, and keeps it on the object. The key is valid for 1 hour; the kept key is returned until it is within a minute of expiring, then a fresh one is requested. The download methods call this for you. `referenceId` is the record the private record references, when your access comes from that record. See [Private files](/database/private#private-files).
 
