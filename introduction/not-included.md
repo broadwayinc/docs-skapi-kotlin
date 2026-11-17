@@ -48,10 +48,6 @@ waiting.cancel(true);
 
 :::
 
-## Playground and test endpoints
-
-`spellcast()`, `getspell()`, `dopamine()` and `mock()` are not included. They are playground and test endpoints of skapi-js, and are not part of skapi-py either.
-
 ## Owner and admin methods
 
 Every method for the project owner and admins is left out, as in skapi-py: managing users, sending newsletters, project settings, hosting, client secrets and so on. skapi-kotlin is for the users of your app. Manage your project on [skapi.com](https://www.skapi.com).
