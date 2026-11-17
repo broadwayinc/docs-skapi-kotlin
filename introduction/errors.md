@@ -1,0 +1,65 @@
+# Errors
+
+Every error skapi-kotlin throws is a `SkapiException` with these fields:
+
+- `code`: a short name you can check in code, such as `INVALID_PARAMETER`.
+- `message`: what went wrong, in plain words.
+- `cause`: the underlying exception, when there is one (for example the network error behind `NETWORK_ERROR`), or `null`.
+- `details`: what the server sent with the error as a `JsonElement`, when it sent more than a message (a [ticket's error body](/tickets/tickets#when-a-consumption-fails), for example), or `null`.
+
+```kotlin
+import com.skapi.Skapi
+import com.skapi.SkapiException
+
+val skapi = Skapi("<Project ID>")
+
+try {
+    skapi.login("user@example.com", "wrong password")
+} catch (err: SkapiException) {
+    println(err.code)     // INCORRECT_USERNAME_OR_PASSWORD
+    println(err.message)  // Incorrect username or password.
+}
+```
+
+`err.toString()` gives both: `INCORRECT_USERNAME_OR_PASSWORD: Incorrect username or password.`
+
+The codes are the same ones skapi-js and skapi-py use, so a check written for one works for the others. A `when` on the code reads well:
+
+```kotlin
+try {
+    skapi.login(email, password)
+} catch (err: SkapiException) {
+    when (err.code) {
+        "INCORRECT_USERNAME_OR_PASSWORD" -> showError("Wrong e-mail or password.")
+        "NETWORK_ERROR" -> showError("No connection. Try again.")
+        else -> showError(err.message)
+    }
+}
+```
+
+## Common codes
+
+| code | meaning |
+|---|---|
+| `INVALID_PARAMETER` | A value you passed is missing, the wrong type, or out of range. The message names it. Nothing was sent. |
+| `INVALID_REQUEST` | The call is not allowed in this state, for example `User login is required.` |
+| `NOT_EXISTS` | The record, file, account or project does not exist. |
+| `EXISTS` | It already exists, for example an account with that e-mail. |
+| `INCORRECT_USERNAME_OR_PASSWORD` | Wrong e-mail, username or password. |
+| `MFA_REQUIRED` | The password was right and the account has two-step login on: call `verifyMfa()` with the code. See [Two-Step Login](/authentication/mfa). |
+| `INVALID_CODE` | Wrong authenticator code. Try the next one. |
+| `SIGNUP_CONFIRMATION_NEEDED` | The user has not confirmed their signup yet. |
+| `USER_IS_DISABLED` | The account is disabled. See [User Profile](/authentication/profile). |
+| `REQUIRE_LOGIN` | The project only lets signed-in users read its database. |
+| `REQUEST_EXCEED` | Too many attempts. Wait and try again. |
+| `TOO_MANY_REQUESTS` | The server kept answering "too many requests" after 6 automatic retries. |
+| `NETWORK_ERROR` | No answer came back. The user stays signed in; try again when the network is back. |
+| `ERROR` | Anything else. The message says what happened. |
+
+## Cancellation is not an error
+
+When the coroutine that made a call is cancelled, the call throws `CancellationException`, not `SkapiException`. Catch `SkapiException` (not `Exception`) around your calls so cancellation still reaches the coroutine and stops it.
+
+## Retries
+
+skapi-kotlin retries on its own when the server asks it to slow down (it waits as long as the server says, up to 6 times), and when a token refresh fails for lack of network (up to about 6 seconds). Other errors are thrown at once.
