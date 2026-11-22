@@ -35,7 +35,7 @@ SkapiJava skapi = new SkapiJava(
 |---|---|
 | `projectId` | the Project ID from your project's Settings page on skapi.com |
 | `storage` | where the signed-in session is kept: `MemoryStorage()` (this object only), `FileStorage(path)` (a JSON file created readable by you only), skapi-android's `SharedPreferencesStorage(context)`, or any [`SkapiStorage`](#skapistorage) |
-| `timeoutSeconds` | seconds to wait for each request (connect, read and write) |
+| `timeoutSeconds` | seconds a request may go with nothing moving (connect, each read, each write) before it fails. An upload that keeps moving is never cut off; once a file is fully sent, its answer may take 5 × `timeoutSeconds` |
 | `targetCdn` | advanced: the CDN host the SDK reads the project's endpoint list from. Leave it `null`. |
 | `encryption` | `EncryptionOptions(...)`: encrypts the data of private records on the device before upload. See [Encryption](/api-reference/encryption). |
 
@@ -48,7 +48,7 @@ The constructor is a plain (not `suspend`) call and sends nothing. The object co
 | `projectId` | `String` | the Project ID |
 | `service` | `String` | the project's service ID, read from the Project ID |
 | `owner` | `String` | the project owner's ID, read from the Project ID |
-| `version` | `String` | `"2.4.1"` (also the constant `SKAPI_VERSION`) |
+| `version` | `String` | `"2.4.4"` (also the constant `SKAPI_VERSION`) |
 | `user` | `JsonObject?` | the signed-in profile (a copy), or `null`. See [user](/api-reference/authentication#user). |
 | `session` | `SkapiSession?` | the signed-in session's tokens: `idToken`, `accessToken`, `refreshToken` (each a `String`), or `null` |
 
@@ -84,7 +84,7 @@ The project's name and settings, and the caller as the server sees it. `refresh 
     "user_agent": "okhttp/4.12.0",
     "user_location": "KR",
     "service_name": "My Project",
-    "version": "2.4.1",
+    "version": "2.4.4",
     "conf": {"prevent_signup": false, "require_login": false, "anonymous_login": false, "...": "..."},
     "encryption_recovery": {"code": null, "message": "..."}
 }

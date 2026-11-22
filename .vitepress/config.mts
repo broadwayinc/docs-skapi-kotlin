@@ -108,7 +108,7 @@ export default defineConfig({
       },
     ],
     socialLinks: [{ icon: 'github', link: 'https://github.com/broadwayinc/skapi-kotlin' }],
-    footer: { message: 'skapi-kotlin 2.4.1', copyright: 'broadway Inc.' },
+    footer: { message: 'skapi-kotlin 2.4.4', copyright: 'broadway Inc.' },
   },
   vite: {
     server: {

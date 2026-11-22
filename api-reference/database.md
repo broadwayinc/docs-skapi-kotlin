@@ -21,7 +21,9 @@ These can come from any method below that takes the input or needs the state.
 | `INVALID_REQUEST` | `Fetch limit should be below 1000.` | `FetchOptions.limit` |
 | `INVALID_PARAMETER` | `"<value>" is invalid startKey key.` | `FetchOptions.startKey` is not an object, `"start"` or `"end"` |
 | `NETWORK_ERROR` | `Network error` | no answer came back |
+| `TIMEOUT` | `No response for <timeoutSeconds> seconds.` | nothing was sent or received for `timeoutSeconds` seconds |
 | `TOO_MANY_REQUESTS` | `Too many requests: ...` | still refused after 6 automatic retries |
+| `TIMEOUT` | `Upload timeout: ...` | a file upload stalled: nothing sent for `timeoutSeconds`, or no answer 5 × `timeoutSeconds` after it was sent |
 
 ## FetchOptions
 

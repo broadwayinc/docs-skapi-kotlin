@@ -10,10 +10,10 @@ Gradle (`build.gradle.kts`):
 
 ```kotlin
 dependencies {
-    implementation("com.skapi:skapi-java:2.4.1")
+    implementation("com.skapi:skapi-java:2.4.4")
 
     // Android apps, also:
-    implementation("com.skapi:skapi-android:2.4.1")
+    implementation("com.skapi:skapi-android:2.4.4")
 }
 ```
 
@@ -21,7 +21,7 @@ Gradle (`build.gradle`):
 
 ```groovy
 dependencies {
-    implementation 'com.skapi:skapi-java:2.4.1'
+    implementation 'com.skapi:skapi-java:2.4.4'
 }
 ```
 
@@ -31,7 +31,7 @@ Maven (`pom.xml`):
 <dependency>
     <groupId>com.skapi</groupId>
     <artifactId>skapi-java</artifactId>
-    <version>2.4.1</version>
+    <version>2.4.4</version>
 </dependency>
 ```
 

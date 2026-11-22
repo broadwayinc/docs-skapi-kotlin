@@ -25,19 +25,19 @@ In your module's `build.gradle.kts`:
 
 ```kotlin [Kotlin]
 dependencies {
-    implementation("com.skapi:skapi-kotlin:2.4.1")
+    implementation("com.skapi:skapi-kotlin:2.4.4")
 
     // Android apps, also:
-    implementation("com.skapi:skapi-android:2.4.1")
+    implementation("com.skapi:skapi-android:2.4.4")
 }
 ```
 
 ```kotlin [Java]
 dependencies {
-    implementation("com.skapi:skapi-java:2.4.1")
+    implementation("com.skapi:skapi-java:2.4.4")
 
     // Android apps, also:
-    implementation("com.skapi:skapi-android:2.4.1")
+    implementation("com.skapi:skapi-android:2.4.4")
 }
 ```
 
