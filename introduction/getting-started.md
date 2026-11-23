@@ -1,6 +1,6 @@
 # Getting Started
 
-skapi-kotlin is the Skapi API for Kotlin and Java. It signs users in, keeps their sessions, and reads and writes your project's database, with the same queries, answers and error codes as [skapi-js](https://docs.skapi.com) and skapi-py. Use it in Android apps, Kotlin and Java servers, desktop programs and command line tools.
+skapi-kotlin is the Skapi API for Kotlin and Java. It signs users in, keeps their sessions, and reads and writes your project's database, with the same queries, answers and error codes as [skapi-js](https://docs.skapi.com) and skapi-py. Use it in client applications: Android apps, Kotlin and Java desktop programs and command line tools.
 
 It comes in three parts:
 
@@ -419,7 +419,7 @@ new SkapiJava(
 
 - **Suspend functions on `Dispatchers.IO`.** Every method that talks to the server switches to `Dispatchers.IO` on its own. You can call it from any coroutine, the main thread's included.
 - **Cancelling stops the request.** When the coroutine that called a method is cancelled (the screen closed, `job.cancel()`, a `withTimeout`), the request is stopped and the call throws `CancellationException`. A request the server already received may still have done its work, for example a record may have been written.
-- **One `Skapi` object per signed-in user.** An object holds one signed-in user, and many coroutines can use it at once: they share its session and its token refreshes. A server that acts for many users at once uses one object per user, each with its own `storage`. On Android, keep a single object for the whole app (see [Android](/introduction/android#one-skapi-object-for-the-app)).
+- **One `Skapi` object per signed-in user.** An object holds one signed-in user, and many coroutines can use it at once: they share its session and its token refreshes. A program that signs in more than one user at once uses one object per user, each with its own `storage`. On Android, keep a single object for the whole app (see [Android](/introduction/android#one-skapi-object-for-the-app)).
 - **Background timers.** An object keeps a temporary account alive and keeps the realtime connection open on its own daemon threads. [`close()`](/api-reference/connection#close) stops them when you are done with the object; the session stays saved in `storage`.
 - **Callbacks run on background threads.** The realtime callback and a forwarded request's `onStream` are called on a background thread. On Android, move to the main thread before you touch views.
 

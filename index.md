@@ -20,12 +20,12 @@ hero:
 features:
   - title: Android Apps and the JVM
     icon: '<span class="feature-logos"><span><img src="/lang/kotlin.svg" alt="Kotlin logo" width="28" height="28"></span><span><img src="/lang/java.svg" alt="Java logo" width="28" height="28"></span></span>'
-    details: One library for Android apps, Kotlin and Java servers, desktop programs and command line tools. Suspend functions in Kotlin, CompletableFuture in Java, no server to deploy.
+    details: "One library for client applications: Android apps, Kotlin and Java desktop programs and command line tools. Suspend functions in Kotlin, CompletableFuture in Java, no server to deploy."
     link: https://github.com/broadwayinc/skapi-kotlin
   - title: Build with your AI Agents
     icon: 🤖
     details: Let your AI agent build your backend with Skapi. Spend less time on infrastructure and more time building your application.
-    link: https://mcp.broadwayinc.computer/
+    link: https://mcp.skapi.com/
   - icon: ⚡
     title: High Performance. Lower Costs.
     details: A fully serverless architecture that scales with your application while keeping operating costs low.

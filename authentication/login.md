@@ -159,7 +159,7 @@ On an [anonymous](/authentication/anonymous) session, `logout()` deletes the tem
 
 ## Signing in with tokens
 
-[`loginWithToken()`](/api-reference/authentication#loginwithtoken) takes over a session that started somewhere else, for example a web page using skapi-js that hands the user's tokens to your app or your Kotlin server.
+[`loginWithToken()`](/api-reference/authentication#loginwithtoken) takes over a session that started somewhere else, for example a web page using skapi-js that hands the user's tokens to your app.
 
 ::: code-group
 
@@ -176,5 +176,5 @@ Map<String, Object> user = skapi.loginWithToken(idToken, accessToken, refreshTok
 All three tokens are required. The ID token must belong to this project and must not be expired. The object is then signed in as that user, and the tokens are saved to `storage`. `skapi.session` holds the current tokens (`idToken`, `accessToken`, `refreshToken`) if you need to pass them on.
 
 ::: warning
-skapi-kotlin reads the profile from the ID token without checking its signature. The server checks the tokens on every request. Before trusting `skapi.user` in your own server code, make a signed-in call, for example `getProfile(refreshToken = true)`, which returns `null` for tokens the server refuses.
+skapi-kotlin reads the profile from the ID token without checking its signature. The server checks the tokens on every request. Before trusting `skapi.user` in your code, make a signed-in call, for example `getProfile(refreshToken = true)`, which returns `null` for tokens the server refuses.
 :::
