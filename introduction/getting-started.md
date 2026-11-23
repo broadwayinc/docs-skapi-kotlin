@@ -423,6 +423,26 @@ new SkapiJava(
 - **Background timers.** An object keeps a temporary account alive and keeps the realtime connection open on its own daemon threads. [`close()`](/api-reference/connection#close) stops them when you are done with the object; the session stays saved in `storage`.
 - **Callbacks run on background threads.** The realtime callback and a forwarded request's `onStream` are called on a background thread. On Android, move to the main thread before you touch views.
 
+## Building With Your AI Agent
+
+An AI coding agent can write your skapi-kotlin app. Give it Skapi's base prompt for skapi-kotlin:
+
+- **[SKAPI.md](https://jvm.skapi.com/SKAPI.md)** (<a href="/SKAPI.md" download="SKAPI.md">download</a>): the rules for building an Android, Kotlin or Java app, a map of this documentation and an index of every skapi-kotlin method. Each entry links to its page under `https://jvm.skapi.com/md/` (every page of this site as raw markdown), and the agent opens a page when it builds that feature, so it needs to be able to open public web pages.
+
+To use it:
+
+1. Download the file.
+2. Save it in your project folder under the name your agent reads (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md` ...), or attach it to your chat.
+3. Ask the agent to use it as its base prompt, with your Project ID:
+
+```text
+Use SKAPI.md as your base prompt.
+My Skapi project ID is "<Project ID>".
+Build me a [describe what you want].
+```
+
+With the [Skapi MCP server](https://mcp.skapi.com) connected, the agent can also create a project, register Secret Keys and Tickets, and read this documentation through its `readDocs` tool.
+
 ## Next
 
 - [Signing Up Users](/authentication/signup) and [Login / Logout](/authentication/login)
