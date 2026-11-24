@@ -408,7 +408,7 @@ Only a settled request can be finalized. After three failed reads of the pieces 
 
 ## Request history
 
-[forwardRequestHistory](/api-reference/api-bridge#forwardrequesthistory) lists your requests to one `url` and `method` (upper case), with their answers:
+[forwardRequestHistory](/api-reference/api-bridge#forwardrequesthistory) lists your requests to one `url` and `method` (upper case), with their answers. Only your own requests are listed, also when you name a queue: another user's requests on a queue with the same name never appear. For example:
 
 ::: code-group
 
