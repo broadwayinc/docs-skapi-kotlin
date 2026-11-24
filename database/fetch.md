@@ -258,6 +258,7 @@ Every record comes back as a `JsonObject`:
         "referencing_limit": null,
         "prevent_multiple_referencing": false,
         "can_remove_referencing_records": false,
+        "can_modify_referencing_records": false,
         "only_granted_can_reference": false
     },
     "referenced_count": 0,
@@ -278,6 +279,8 @@ Every record comes back as a `JsonObject`:
 | `reference` | the record ID this record references, when set |
 | `referenced_count` | how many records reference this one |
 | `uploaded`, `updated` | milliseconds |
+| `updated_by` | only when someone other than the uploader made the last update (the referenced record's uploader through [`can_modify_referencing_records`](/database/reference#letting-the-parent-s-uploader-change-referencing-records), the project owner or an admin): that user's ID. Gone once the uploader updates the record again. |
+| `ip` | the uploader's IP address, returned only to the uploader, the project owner and admins in access group `99`. Anyone else reads `""`, or `"0.0.0.0"` for a record a signed-out user posted from an IPv4 address (its `user_id` starts with `anonymous:`). One posted from an IPv6 address reads `""`, and its `user_id` has no `anonymous:` prefix, as before. |
 | `bin` | attached files, see [Files](/database/files) |
 
 Each entry in `bin` is an object with `access_group`, `filename`, `url`, `path`, `size` and `uploaded`. See [Files](/database/files#files-on-a-record).

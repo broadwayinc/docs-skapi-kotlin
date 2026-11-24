@@ -48,7 +48,7 @@ The constructor is a plain (not `suspend`) call and sends nothing. The object co
 | `projectId` | `String` | the Project ID |
 | `service` | `String` | the project's service ID, read from the Project ID |
 | `owner` | `String` | the project owner's ID, read from the Project ID |
-| `version` | `String` | `"2.4.4"` (also the constant `SKAPI_VERSION`) |
+| `version` | `String` | `"2.5.0"` (also the constant `SKAPI_VERSION`) |
 | `user` | `JsonObject?` | the signed-in profile (a copy), or `null`. See [user](/api-reference/authentication#user). |
 | `session` | `SkapiSession?` | the signed-in session's tokens: `idToken`, `accessToken`, `refreshToken` (each a `String`), or `null` |
 
@@ -84,7 +84,7 @@ The project's name and settings, and the caller as the server sees it. `refresh 
     "user_agent": "okhttp/4.12.0",
     "user_location": "KR",
     "service_name": "My Project",
-    "version": "2.4.4",
+    "version": "2.5.0",
     "conf": {"prevent_signup": false, "require_login": false, "anonymous_login": false, "...": "..."},
     "encryption_recovery": {"code": null, "message": "..."}
 }

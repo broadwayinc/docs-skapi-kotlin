@@ -137,6 +137,7 @@ Sorting by the number of references, for example the posts with the most comment
 | `referencing_limit` | How many records may reference this one. `null` (default) is no limit, `0` allows none. |
 | `prevent_multiple_referencing` | `true`: each user may reference it only once. Good for votes. |
 | `can_remove_referencing_records` | `true`: the uploader may delete records that reference it, and deleting it deletes them too. Good for a post owner removing comments. |
+| `can_modify_referencing_records` | `true`: the uploader may change the `data`, `tags` and `index` of records that reference it, or unlink them. Set it when the record is created. See [Letting the parent's uploader change referencing records](#letting-the-parent-s-uploader-change-referencing-records). |
 | `only_granted_can_reference` | `true`: only users with [private access](/database/private) may reference it. |
 | `allow_granted_to_grant_others` | `true`: users with private access may grant it to others. |
 | `referencing_index_restrictions` | A list of index rules the referencing records must meet, see below. |
@@ -210,3 +211,106 @@ Use a number for the rating so [getIndexes](/database/index-tags#getindexes) can
 ::: warning
 A user with private access to a record can read every record that references it, private ones included. If that is not what you want, do not let users post private records that reference other records.
 :::
+
+## Letting the parent's uploader change referencing records
+
+By default only the user who uploaded a record can change it. Set `source.can_modify_referencing_records` to `true` when you post a record, and its uploader can also change the records other users post referencing it: a post's author moderating the comments, a support thread's author marking the answers, a form's author updating the status of each submission.
+
+::: code-group
+
+```kotlin [Kotlin]
+// The post: its uploader may change the comments that reference it.
+val post = skapi.postRecord(
+    jsonOf("text" to "What do you think of this?"),
+    jsonOf(
+        "table" to jsonOf("name" to "posts", "access_group" to "public"),
+        "source" to jsonOf("can_modify_referencing_records" to true),
+    ),
+)
+
+// Later, signed in as the post's uploader: hide another user's comment.
+val comment = skapi.postRecord(
+    jsonOf("text" to "This comment was hidden by the author of the post."),
+    jsonOf(
+        "record_id" to "<comment record id>",
+        "tags" to listOf("hidden"),
+        "index" to jsonOf("name" to "status", "value" to "hidden"),
+    ),
+)
+comment["user_id"]    // still the user who posted the comment
+comment["updated_by"] // the post uploader's user ID
+```
+
+```java [Java]
+// The post: its uploader may change the comments that reference it.
+Map<String, Object> post = skapi.postRecord(
+    SkapiJson.obj("text", "What do you think of this?"),
+    SkapiJson.obj(
+        "table", SkapiJson.obj("name", "posts", "access_group", "public"),
+        "source", SkapiJson.obj("can_modify_referencing_records", true)
+    )
+).get();
+
+// Later, signed in as the post's uploader: hide another user's comment.
+Map<String, Object> comment = skapi.postRecord(
+    SkapiJson.obj("text", "This comment was hidden by the author of the post."),
+    SkapiJson.obj(
+        "record_id", "<comment record id>",
+        "tags", SkapiJson.list("hidden"),
+        "index", SkapiJson.obj("name", "status", "value", "hidden")
+    )
+).get();
+comment.get("user_id");    // still the user who posted the comment
+comment.get("updated_by"); // the post uploader's user ID
+```
+
+:::
+
+### What can be changed
+
+On a record that references their post, the post's uploader can change only:
+
+- `data`
+- `tags`
+- `index`. The post's [index restrictions](#index-restrictions) still apply to the new index while the record references the post.
+- `reference` set to `null`, which unlinks the record from the post. Once unlinked, the post's uploader can no longer change it.
+
+::: code-group
+
+```kotlin [Kotlin]
+skapi.postRecord(jsonOf("record_id" to "<comment record id>", "reference" to null))
+```
+
+```java [Java]
+skapi.postRecord(SkapiJson.obj("record_id", "<comment record id>", "reference", null)).get();
+```
+
+:::
+
+Everything else is refused with `INVALID_REQUEST`, and nothing is written:
+
+- The table name, the access group, the subscription settings, `readonly`, `unique_id`, any `source` setting, and removing every file with `"remove_bin" to null`: `The referenced record's user can only change the data, tags and index of a record that references theirs, or unlink it (<field> differs).` A value sent as it is already stored is not a change.
+- Removing files by URL with `remove_bin`: `The binary should be owned by the user.` The files belong to the user who posted the record.
+- Pointing `reference` at any other record. Only `null` is allowed.
+- A private record: `The referenced record's user cannot update a private record.`
+- A read-only record: `Record is read only.`
+- A record in an access group above the post uploader's own: `User has no access to this group.`
+
+Files cannot be attached either, but `postRecord` does not throw for them: the record is saved first, then each file asks for an upload permit, and those permits are refused (`User has no access to update this record.`). So a request that passes `files` saves its `data`, `tags`, `index` or `reference` change, and returns without attaching the files. Do not pass `files` when changing another user's record.
+
+The record keeps its owner: `user_id` stays the user who posted it, its files stay theirs, and that user can still update or delete it in full.
+
+### When it can be turned on
+
+The setting hands other users' records to the record's uploader, so the users who reference a record must be able to see it before they post. That is why the uploader can set it to `true` only when the record is **created**:
+
+- On an update, the uploader can turn it off (`false`) at any time, but cannot turn it on: `"source.can_modify_referencing_records" can only be set when the record is created. Only the project owner and admins in access group 99 can turn it on for an existing record.`
+- The project owner and admins in access group `99` can turn it on for an existing record. Admins in access groups `90` to `98` cannot.
+
+The setting is read back in `record["source"]["can_modify_referencing_records"]`.
+
+### Who changed a record: `updated_by`
+
+When someone other than its uploader last updated a record (the parent's uploader through this setting, the project owner or an admin), the record has `updated_by`, that user's ID. It is removed when the record's uploader updates the record again, and a request cannot set it. See [The record](/database/fetch#the-record).
+
+The record that [postRecord](/api-reference/database#postrecord) returns to the post's uploader after such an update has `ip` read as `""`, or `"0.0.0.0"` for a record posted by a signed-out user: a record's IP address is returned only to its uploader, the project owner and admins in access group `99`.

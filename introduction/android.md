@@ -12,15 +12,15 @@ skapi-kotlin runs on Android as it is. skapi-android adds what an app needs on t
 
 ```kotlin [Kotlin]
 dependencies {
-    implementation("com.skapi:skapi-kotlin:2.4.4")
-    implementation("com.skapi:skapi-android:2.4.4")
+    implementation("com.skapi:skapi-kotlin:2.5.0")
+    implementation("com.skapi:skapi-android:2.5.0")
 }
 ```
 
 ```kotlin [Java]
 dependencies {
-    implementation("com.skapi:skapi-java:2.4.4")
-    implementation("com.skapi:skapi-android:2.4.4")
+    implementation("com.skapi:skapi-java:2.5.0")
+    implementation("com.skapi:skapi-android:2.5.0")
 }
 ```
 

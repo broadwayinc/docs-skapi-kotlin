@@ -2,7 +2,12 @@
 
 ## Updating a record
 
-Call [postRecord](/api-reference/database#postrecord) with the record's `record_id` in the config. Only the keys you send change; everything else on the record stays as it is. You must be signed in, and the record must be yours.
+Call [postRecord](/api-reference/database#postrecord) with the record's `record_id` in the config. Only the keys you send change; everything else on the record stays as it is. You must be signed in, and the record must be yours, with two exceptions:
+
+- The uploader of a record posted with `source.can_modify_referencing_records` can change the `data`, `tags` and `index` of other users' records that reference it, or unlink them with `"reference" to null`. See [Letting the parent's uploader change referencing records](/database/reference#letting-the-parent-s-uploader-change-referencing-records).
+- The project owner and admins in access group `99` can update other users' records (admins in access groups `90` to `98` only their subscription settings).
+
+When someone other than its uploader last updated a record, the record has `updated_by`, that user's ID. It is removed when the uploader updates the record again.
 
 ::: code-group
 

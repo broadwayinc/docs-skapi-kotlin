@@ -124,7 +124,7 @@ Creates a record, or updates the one named by `config["record_id"]`. Returns the
 | `index` | object or `null` | `{"name": <string>, "value": <string, number or boolean>}`. `null` removes it. |
 | `tags` | array of strings, or comma-separated string | `null` or `[]` removes them. |
 | `reference` | string, `{"record_id"}`, `{"unique_id"}` or `null` | `null` removes it. |
-| `source` | object | `referencing_limit` (number or `null`), `prevent_multiple_referencing`, `can_remove_referencing_records`, `only_granted_can_reference`, `allow_granted_to_grant_others` (booleans), `referencing_index_restrictions` (array of `{"name", "value"?, "condition"?}`). See [Reference rules](/database/reference#reference-rules). |
+| `source` | object | `referencing_limit` (number or `null`), `prevent_multiple_referencing`, `can_remove_referencing_records`, `can_modify_referencing_records`, `only_granted_can_reference`, `allow_granted_to_grant_others` (booleans), `referencing_index_restrictions` (array of `{"name", "value"?, "condition"?}`). See [Reference rules](/database/reference#reference-rules). `can_modify_referencing_records` can be turned on only when the record is created (later only by the project owner or an admin in access group `99`), and off at any time: see [Letting the parent's uploader change referencing records](/database/reference#letting-the-parent-s-uploader-change-referencing-records). |
 | `remove_bin` | array of urls or bin objects, or `null` | Files to remove. `null` removes every file; `[]` removes nothing. |
 
 ### Errors
@@ -148,7 +148,11 @@ Creates a record, or updates the one named by `config["record_id"]`. Returns the
 | `INVALID_REQUEST` | `Data should not exceed 2MB` |
 | `INVALID_REQUEST` | `Public users can only post records to public tables.` / `Public users cannot update existing records.` / `Public users cannot set unique_id for records.` / `Public users cannot remove files from records.` |
 | `INVALID_REQUEST` | `User has no access to update this record.` |
+| `INVALID_REQUEST` | `The referenced record's user can only change the data, tags and index of a record that references theirs, or unlink it (<field> differs).` (updating another user's record through `can_modify_referencing_records`; `remove_bin` with file URLs fails earlier with `The binary should be owned by the user.`) |
+| `INVALID_REQUEST` | `The referenced record's user cannot update a private record.` |
+| `INVALID_REQUEST` | `"source.can_modify_referencing_records" can only be set when the record is created. Only the project owner and admins in access group 99 can turn it on for an existing record.` |
 | `INVALID_REQUEST` | `Record is read only.` |
+| `INVALID_REQUEST` | `User has no access to this group.` (a record in an access group above the user's own; only a post that references a record in that group may go there, and `"reference" to null` does not count) |
 | `INVALID_REQUEST` | `Only the owner of a record can move it into or out of the private access group.` / `User has no access to change the private access of the record.` |
 | `INVALID_REQUEST` | `"__data__/__json__.json" is a reserved file name.` (a file named `__json__.json` under the name `__data__`) |
 
