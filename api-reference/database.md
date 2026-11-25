@@ -125,7 +125,7 @@ Creates a record, or updates the one named by `config["record_id"]`. Returns the
 | `readonly` | boolean | |
 | `index` | object or `null` | `{"name": <string>, "value": <string, number or boolean>}`. `null` removes it. |
 | `tags` | array of strings, or comma-separated string | `null` or `[]` removes them. |
-| `reference` | string, `{"record_id"}`, `{"unique_id"}` or `null` | `null` removes it. |
+| `reference` | string, `{"record_id"}`, `{"unique_id"}` or `null` | `null` removes it. A record above your access group must reference a record you were granted, at or below that record's access group. See [References](/database/reference). |
 | `source` | object | `referencing_limit` (number or `null`), `prevent_multiple_referencing`, `can_remove_referencing_records`, `can_modify_referencing_records`, `only_granted_can_reference`, `allow_granted_to_grant_others` (booleans), `referencing_index_restrictions` (array of `{"name", "value"?, "condition"?}`). See [Reference rules](/database/reference#reference-rules). `can_modify_referencing_records` can be turned on only when the record is created (later only by the project owner or an admin in access group `99`), and off at any time: see [Letting the parent's uploader change referencing records](/database/reference#letting-the-parent-s-uploader-change-referencing-records). |
 | `remove_bin` | array of urls or bin objects, or `null` | Files to remove. `null` removes every file; `[]` removes nothing. |
 
@@ -154,7 +154,7 @@ Creates a record, or updates the one named by `config["record_id"]`. Returns the
 | `INVALID_REQUEST` | `The referenced record's user cannot update a private record.` |
 | `INVALID_REQUEST` | `"source.can_modify_referencing_records" can only be set when the record is created. Only the project owner and admins in access group 99 can turn it on for an existing record.` |
 | `INVALID_REQUEST` | `Record is read only.` |
-| `INVALID_REQUEST` | `User has no access to this group.` (a record in an access group above the user's own; only a post that references a record in that group may go there, and `"reference" to null` does not count) |
+| `INVALID_REQUEST` | `User has no access to this group.` (a record in an access group above the user's own with no reference; `"reference" to null` counts as none) / `User has no access to this group. A record above your access group must reference a record you were granted, and stay at or below that record's access group.` / `User has no access to this group. A private record lends no access group: a record that references it can be at most your own access group, or private.` (a record above the user's own access group whose reference is not to a record the user was granted, is to a private record, or is to a record in a lower access group; see [References](/database/reference)) |
 | `INVALID_REQUEST` | `Only the owner of a record can move it into or out of the private access group.` / `User has no access to change the private access of the record.` |
 | `INVALID_REQUEST` | `"__data__/__json__.json" is a reserved file name.` (a file named `__json__.json` under the name `__data__`) |
 
@@ -620,7 +620,7 @@ CompletableFuture<Map<String, Object>> listPrivateRecordAccess(String recordId, 
 
 :::
 
-Signed-in only. Who can read a private record (`recordId`), or which private records users can read (`userIds`); at least one. Each item in `list` has `record_id` and `user_id`. See [Listing grants](/database/private#listing-grants).
+Signed-in only. Who can read a private record (`recordId`), or which private records users can read (`userIds`); at least one. Each item in `list` has `record_id` and `user_id`. Only users with access to the data can list, see [Listing grants](/database/private#listing-grants).
 
 ### Errors
 
@@ -628,6 +628,7 @@ Signed-in only. Who can read a private record (`recordId`), or which private rec
 |---|---|
 | `INVALID_PARAMETER` | `Either record_id or user_id must be provided.` |
 | `INVALID_PARAMETER` | `User ID is empty.` / `User ID is invalid.` |
+| `INVALID_REQUEST` | `User has no access to list the private access of this record.` / `User has no access to list the private access of this user.` |
 
 ## requestPrivateRecordAccessKey
 
@@ -644,12 +645,12 @@ CompletableFuture<String> requestPrivateRecordAccessKey(String recordId, String 
 
 :::
 
-Signed-in only. Returns the key that opens the record's private files, and keeps it on the object. The key is valid for 1 hour; the kept key is returned until it is within a minute of expiring, then a fresh one is requested. The download methods call this for you. `referenceId` is the record the private record references, when your access comes from that record. See [Private files](/database/private#private-files).
+Signed-in only. Returns the key that opens the record's private files, and keeps it on the object. The key is valid for 1 hour; the kept key is returned until it is within a minute of expiring, then a fresh one is requested. The download methods call this for you. `referenceId` is the record the private record references, when your access comes from that record: the key is given only when `recordId` references it directly and you uploaded it or were granted private access to it, or you were granted the private record itself. See [Private files](/database/private#private-files).
 
 ### Errors
 
 | code | message |
 |---|---|
 | `INVALID_PARAMETER` | `Record ID is required.` |
-| `INVALID_REQUEST` | `User's private access for record: "<record_id>" does not exist.` / `User's private access for reference: "<reference_id>" does not exist.` |
+| `INVALID_REQUEST` | `User's private access for record: "<record_id>" does not exist.` / `User's private access for reference: "<reference_id>" does not exist.` (with `referenceId`: the record does not reference it directly, or you did not upload it and were not granted it, and you hold no grant on the record itself) |
 | `ERROR` | `Invalid private access key response.` |
