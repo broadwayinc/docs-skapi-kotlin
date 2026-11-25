@@ -16,7 +16,9 @@ CompletableFuture<Void> connectRealtime(Consumer<Map<String, Object>> callback) 
 
 :::
 
-Opens the realtime connection and returns once it is open. `callback(event)` runs on a background thread for every event; see [Events](/realtime/connecting#events). On Android, post to the main thread before touching views. Called again while connected, it only swaps the callback. The connection reopens on its own after a drop.
+Opens the realtime connection and returns once it is open. `callback(event)` runs on a background thread for every event; see [Events](/realtime/connecting#events). On Android, post to the main thread before touching views. Called again while connected, it only swaps the callback (a connection the [request status push](/api-reference/api-bridge#onrequeststatus) opened becomes yours, and is no longer closed for you). The connection reopens on its own after a drop.
+
+The server's request status changes (`"#code": "CSR_STATUS"`, sent to every connection of the user) never reach `callback`; listen to them with [onRequestStatus](/api-reference/api-bridge#onrequeststatus).
 
 ### Errors
 

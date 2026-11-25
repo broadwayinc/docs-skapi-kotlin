@@ -1,6 +1,6 @@
 # API Reference
 
-Every method of skapi-kotlin 2.5.0. Each one throws [`SkapiException`](/introduction/errors) on failure. Methods that talk to the server are `suspend` functions that run on `Dispatchers.IO`.
+Every method of skapi-kotlin 2.7.0. Each one throws [`SkapiException`](/introduction/errors) on failure. Methods that talk to the server are `suspend` functions that run on `Dispatchers.IO`.
 
 From Java, every method below has the same name on `SkapiJava` and returns a `CompletableFuture`. See [Using from Java](/introduction/java).
 
@@ -94,7 +94,10 @@ From Java, every method below has the same name on `SkapiJava` and returns a `Co
 | [`forwardRequest(options, form = null, onStream = null)`](/api-reference/api-bridge#forwardrequest) | calls another API through Skapi, with your client secrets |
 | [`forwardRequestPoll(requestId)`](/api-reference/api-bridge#forwardrequestpoll) / [`forwardRequestStream(requestId)`](/api-reference/api-bridge#forwardrequeststream) | waits for a queued or streamed answer |
 | [`forwardRequestFinalize(requestId, data)`](/api-reference/api-bridge#forwardrequestfinalize) | stores a streamed request's final answer |
-| [`forwardRequestHistory(params, fetchOptions = null)`](/api-reference/api-bridge#forwardrequesthistory) | past forwarded requests and their answers |
+| [`forwardRequestHistory(params, fetchOptions = null, signal = null)`](/api-reference/api-bridge#forwardrequesthistory) | past forwarded requests and their answers |
+| [`forwardRequestStatus(requests)`](/api-reference/api-bridge#forwardrequeststatus) / [`forwardRequestQueueCounters(queues)`](/api-reference/api-bridge#forwardrequestqueuecounters) | where many requests stand, in one call; queue counters |
+| [`forwardRequestRead(params)`](/api-reference/api-bridge#forwardrequestread) | one request in full: status, stored answer, streamed text |
+| [`onRequestStatus(callback)`](/api-reference/api-bridge#onrequeststatus) / [`isRequestStatusLive()`](/api-reference/api-bridge#isrequeststatuslive) | status changes of requests sent with `notify` |
 | [`cancelForwardRequest(params)`](/api-reference/api-bridge#cancelforwardrequest) / [`forwardRequestQueueCount(params)`](/api-reference/api-bridge#forwardrequestqueuecount) | queue control |
 
 ## [Tickets](/api-reference/tickets)

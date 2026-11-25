@@ -48,6 +48,8 @@ Object answer = skapi.forwardRequest(SkapiJson.obj(
 | `secretName` | A client secret to fill in, see below. |
 | `skapiHeaders` | Tell the destination who is calling, see below. |
 | `queue`, `poll`, `stream`, `expires` | See [Queued requests](#queued-requests) and [Streamed requests](#streamed-requests). |
+| `cref` | Your own reference for the request, see [Finding a request again](#finding-a-request-again). |
+| `notify` | Status push for a queued request, see [Status push](#status-push). |
 | `multipart` | `true` sends `form` as a multipart body, see below. |
 | `responseType` | `"json"` parses a string answer (a string that does not parse comes back unchanged); `"text"` gives a string, turning anything else into JSON text. |
 
@@ -281,6 +283,8 @@ Object again = skapi.forwardRequestPoll(
 
 :::
 
+A poll is not ended by a failure on the way: no network, `TIMEOUT`, `RATE_LIMITED`, `TOO_MANY_REQUESTS`, `SERVER_ERROR`, or no sign-in token. It tries again on a later check, waiting twice as long after each failure in a row, up to 30 seconds, and only the server's own answer settles it. When the server refuses the sign-in token (401), the token is refreshed once and the poll carries on. While the user is signed out it waits without sending anything, and reads again once they sign in. A refusal such as `NOT_EXISTS` still ends it. [forwardRequestStream](/api-reference/api-bridge#forwardrequeststream) follows the same rules.
+
 Only the caller who made a request can read it. A signed-in caller is the user, on any device. A signed-out caller is the IP address and User-Agent pair, so a request made signed out must be polled, cancelled and finalized from the same IP with the same User-Agent; otherwise it is `NOT_EXISTS` (`Request not found.`).
 
 ## Streamed requests
@@ -404,6 +408,20 @@ skapi.forwardRequestFinalize(requestId, answer.toString()).get();
 
 :::
 
+`"ifAbsent" to true` stores the value only when the request has no stored result yet. When it has one, nothing changes and the answer is `{"finalized": false, "reason": "exists"}`, so two devices settling the same request cannot replace a complete answer with a partial one.
+
+::: code-group
+
+```kotlin [Kotlin]
+skapi.forwardRequestFinalize(requestId, JsonPrimitive(answer.toString()), jsonOf("ifAbsent" to true))
+```
+
+```java [Java]
+skapi.forwardRequestFinalize(requestId, answer.toString(), SkapiJson.obj("ifAbsent", true)).get();
+```
+
+:::
+
 Only a settled request can be finalized. After three failed reads of the pieces in a row on a settled request, the read gives up and returns what it has, so check your text is complete before you finalize it.
 
 ## Request history
@@ -450,7 +468,175 @@ for (Object entry : (List<Object>) history.get("list")) {
 
 :::
 
-`"compact" to true` leaves the bodies out and gives short `request_text` and `response_text` instead. The listing pages like [getRecords](/database/fetch#paging).
+`"compact" to true` leaves the bodies out and gives short `request_text` and `response_text` instead. `"fields" to "ids"` is lighter still: each row is only its id, status, times, queue and `cref`, with no request or response bodies, so a page stays small however long the answers are. `"after"` to a request's short id lists only the rows newer than it: what appeared since the newest row you already have. The listing pages like [getRecords](/database/fetch#paging).
+
+`queue` matches every queue whose name starts with it, so `"u1"` also lists `"u1-bg"`. `"queue_exact" to true` lists only the queue named in `queue`, and the server then reads only that queue's rows. Requests queued before 2026-06-05 were stored under an older queue format and are not listed with `queue_exact`: list the queue without it to see those. `"queue_exclude"` leaves one queue's rows out after the read, so a page can come back short while more rows remain; keep paging until `endOfList`.
+
+## Finding a request again
+
+`cref` is your own reference for a request: 1 to 64 letters, digits, `_` or `-`. It is stored on the request and handed back by the reply, [forwardRequestHistory](/api-reference/api-bridge#forwardrequesthistory), [forwardRequestStatus](/api-reference/api-bridge#forwardrequeststatus) and [forwardRequestRead](/api-reference/api-bridge#forwardrequestread). When the reply of a send is lost (the device slept, the network dropped), look the request up by its `cref` instead of sending it again. Make a new one per request.
+
+::: code-group
+
+```kotlin [Kotlin]
+val cref = "msg-" + UUID.randomUUID().toString().replace("-", "")
+try {
+    skapi.forwardRequest(jsonOf("url" to url, "data" to body, "queue" to "chat", "cref" to cref))
+} catch (err: SkapiException) {
+    if (err.code != "NETWORK_ERROR" && err.code != "TIMEOUT") throw err
+    // the send may have arrived: look for it before sending again
+    val recent = skapi.forwardRequestHistory(jsonOf("url" to url, "method" to "POST", "queue" to "chat", "fields" to "ids"))
+    val sent = recent["list"]!!.jsonArray.any { it.jsonObject["cref"]?.jsonPrimitive?.content == cref }
+}
+```
+
+```java [Java]
+String cref = "msg-" + UUID.randomUUID().toString().replace("-", "");
+try {
+    skapi.forwardRequest(SkapiJson.obj("url", url, "data", body, "queue", "chat", "cref", cref)).get();
+} catch (ExecutionException e) {
+    SkapiException err = (SkapiException) e.getCause();
+    if (!err.getCode().equals("NETWORK_ERROR") && !err.getCode().equals("TIMEOUT")) throw err;
+    // the send may have arrived: look for it before sending again
+    Map<String, Object> recent = skapi.forwardRequestHistory(SkapiJson.obj(
+        "url", url, "method", "POST", "queue", "chat", "fields", "ids")).get();
+    boolean sent = ((List<Object>) recent.get("list")).stream()
+        .anyMatch(r -> cref.equals(((Map<String, Object>) r).get("cref")));
+}
+```
+
+:::
+
+A `cref` that is not 1 to 64 of those characters is refused with `INVALID_PARAMETER` before anything is sent.
+
+## Many requests at once
+
+An app that shows several unfinished requests (after the device slept, or when another device sent some) can ask where all of them stand in one call. [forwardRequestStatus](/api-reference/api-bridge#forwardrequeststatus) takes full request ids, or `{id, url, method}` objects with the short id, and returns `{"list"}` in the order asked: each item's `status` (`"missing"` for one this caller cannot see), `stream`, `final_seq`, `has_body`, timestamps and `cref`, with no bodies. More than 100 are asked 100 at a time.
+
+::: code-group
+
+```kotlin [Kotlin]
+val res = skapi.forwardRequestStatus(listOf(
+    JsonPrimitive(requestIdA),
+    jsonOf("id" to shortIdB, "url" to "https://api.example.com/v1/chat", "method" to "POST"),
+), jsonOf("deadline" to 15000))
+for (item in res["list"]!!.jsonArray) println(item.jsonObject["status"])
+```
+
+```java [Java]
+Map<String, Object> res = skapi.forwardRequestStatus(List.of(
+    requestIdA,
+    SkapiJson.obj("id", shortIdB, "url", "https://api.example.com/v1/chat", "method", "POST")
+), SkapiJson.obj("deadline", 15000)).get();
+for (Object item : (List<Object>) res.get("list")) System.out.println(((Map<String, Object>) item).get("status"));
+```
+
+:::
+
+To watch many requests cheaply, read the counters of their queues on every check, and the requests themselves only when a counter moved. [forwardRequestQueueCounters](/api-reference/api-bridge#forwardrequestqueuecounters) takes up to 20 queue names and returns `{"queues": {name: {"cnt", "rct", "seq", "in_queue"}}}`: `rct` grows whenever a request on the queue finishes and `seq` whenever one is added. A queue that never had a request is left out.
+
+::: code-group
+
+```kotlin [Kotlin]
+val counters = skapi.forwardRequestQueueCounters(listOf("chat", "chat-bg"))
+```
+
+```java [Java]
+Map<String, Object> counters = skapi.forwardRequestQueueCounters(List.of("chat", "chat-bg")).get();
+```
+
+:::
+
+## Reading one request in full
+
+[forwardRequestRead](/api-reference/api-bridge#forwardrequestread) reads one request in the same shape whatever state it is in: `{"id", "status", "body"?, "error"?, "chunks"?, "last_seq"?, "final_seq"?, "more"?, ...}`. Unlike a poll, a resolved request does not come back as its bare answer, so the status is always there to read. With `since` (a chunk `seq`, `0` for the beginning) a streamed request's text after that point comes back too, including the text a failed stream got before it failed, with `"more": true` when there is more than one read returns. A stored answer that cannot be loaded right now comes back as `"body_unavailable": true` instead of failing the read.
+
+::: code-group
+
+```kotlin [Kotlin]
+val env = skapi.forwardRequestRead(jsonOf(
+    "id" to shortId, "url" to "https://api.example.com/v1/chat", "method" to "POST", "since" to 0,
+))
+```
+
+```java [Java]
+Map<String, Object> env = skapi.forwardRequestRead(SkapiJson.obj(
+    "id", shortId, "url", "https://api.example.com/v1/chat", "method", "POST", "since", 0
+)).get();
+```
+
+:::
+
+## Deadlines and aborting
+
+[forwardRequestStatus](/api-reference/api-bridge#forwardrequeststatus), [forwardRequestQueueCounters](/api-reference/api-bridge#forwardrequestqueuecounters), [forwardRequestRead](/api-reference/api-bridge#forwardrequestread) and [forwardRequestHistory](/api-reference/api-bridge#forwardrequesthistory) take two more settings:
+
+- `"deadline"` in the options: milliseconds the call may take in all (per call to the server for forwardRequestStatus), counted from the call: the wait for the connection and for a sign-in token refresh, the waits after a `429`, and the network. Past it the call fails with `TIMEOUT` (`No answer within <n> ms.`) and is taken off the network.
+- `signal`: a `SkapiAbortSignal`. `signal.abort()` fails the call with `ABORTED` at once, at any of those stages, and takes it off the network. One signal can be given to several calls; an already aborted signal fails a call at once.
+
+`"fresh"` is accepted too, for code shared with skapi-js. Every read of skapi-kotlin is already fresh: it never joins another read in flight.
+
+::: code-group
+
+```kotlin [Kotlin]
+val signal = SkapiAbortSignal()
+val job = scope.launch {
+    try {
+        skapi.forwardRequestRead(jsonOf("id" to requestId, "deadline" to 10000), signal)
+    } catch (err: SkapiException) {
+        if (err.code == "ABORTED" || err.code == "TIMEOUT") return@launch
+        throw err
+    }
+}
+// later, when the screen closes
+signal.abort()
+```
+
+```java [Java]
+SkapiAbortSignal signal = new SkapiAbortSignal();
+CompletableFuture<Map<String, Object>> read =
+    skapi.forwardRequestRead(SkapiJson.obj("id", requestId, "deadline", 10000), signal);
+// later, when the screen closes
+signal.abort();
+```
+
+:::
+
+## Status push
+
+`"notify" to true` on a queued request (signed-in users) asks the server to tell this user's realtime connections each time the request's status changes: `pending`, `running`, `resolved`, `failed`, `cancelled`. The reply then says `"notify": true`, and a poll of the request (with `poll` on forwardRequest, or [forwardRequestPoll](/api-reference/api-bridge#forwardrequestpoll) with `notify = true`) reads it at once when a change names it, and otherwise only once a minute while changes are arriving. With no realtime connection, no changes arriving, or a server that does not support it, the poll runs at its normal interval: status push only ever saves reads, it never delays an answer.
+
+[onRequestStatus](/api-reference/api-bridge#onrequeststatus) listens to every such change of this user's requests, including ones this client holds no poll for (a request sent from another device, or a pass the server queued to continue one). The realtime connection is kept open while a listener is registered: one is opened when the app has none, and it is closed again ten minutes after the last listener and poll let go, unless the app took it over with [connectRealtime](/api-reference/realtime#connectrealtime) or joined a group on it. These changes never reach your [connectRealtime](/api-reference/realtime#connectrealtime) callback.
+
+::: code-group
+
+```kotlin [Kotlin]
+val stop = skapi.onRequestStatus { event ->
+    when (event["type"]?.jsonPrimitive?.content) {
+        "status" -> println("${event["id"]} is now ${event["status"]}")
+        "connected" -> refreshList() // changes made while disconnected were not sent: read again
+        "disconnected" -> {}
+    }
+}
+// later
+stop()
+```
+
+```java [Java]
+Runnable stop = skapi.onRequestStatus(event -> {
+    switch ((String) event.get("type")) {
+        case "status": System.out.println(event.get("id") + " is now " + event.get("status")); break;
+        case "connected": refreshList(); break; // changes made while disconnected were not sent: read again
+        default: break;
+    }
+});
+// later
+stop.run();
+```
+
+:::
+
+A `status` event is `{"type": "status", "id", "queue", "status", "previous", "updated", "executed"}`: `id` is the short id, `previous` is absent when the request was just created, and `updated` and `executed` are in milliseconds. It is a hint, not the outcome: read the request for its answer. `{"type": "connected"}` comes whenever the listener lands on an open connection (the first time, after every reconnect, and at the planned renewal), and `{"type": "disconnected"}` when it loses it. The callback runs on a background thread. [isRequestStatusLive](/api-reference/api-bridge#isrequeststatuslive) is `true` while changes are arriving.
 
 ## Cancelling and counting
 

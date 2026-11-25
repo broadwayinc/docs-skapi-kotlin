@@ -89,9 +89,12 @@ try {
 | `USER_IS_DISABLED` | The account is disabled. See [User Profile](/authentication/profile). |
 | `REQUIRE_LOGIN` | The project only lets signed-in users read its database. |
 | `REQUEST_EXCEED` | Too many attempts. Wait and try again. |
-| `TOO_MANY_REQUESTS` | The server kept answering "too many requests" after 6 automatic retries. |
+| `TOO_MANY_REQUESTS` | The server kept answering "too many requests" after 6 automatic retries, or a file upload was refused that way. |
+| `RATE_LIMITED` | The server answered "too many requests" (`Too many requests`) without saying when to try again. Wait and try again. |
+| `SERVER_ERROR` | A fault on the server (an answer with status 500 or above, other than 501), not a refusal: try again. The message is the server's, and `details` holds what it sent. |
 | `NETWORK_ERROR` | No answer came back. The user stays signed in; try again when the network is back. |
-| `TIMEOUT` | Nothing was sent or received for `timeoutSeconds` seconds (`No response for 120 seconds.` with the default), or a file upload stalled (`Upload timeout: ...`). Try again. |
+| `TIMEOUT` | Nothing was sent or received for `timeoutSeconds` seconds (`No response for 120 seconds.` with the default), a file upload stalled (`Upload timeout: ...`), a call's `deadline` passed (`No answer within <n> ms.`), or the sign-in token refresh got no answer within 15 seconds (`The sign-in token refresh did not answer within 15 seconds.`: the user stays signed in, and the next call tries the refresh again). Try again. |
+| `ABORTED` | You aborted the call with a [SkapiAbortSignal](/api-reference/api-bridge#skapiabortsignal) (`Aborted`). |
 | `EXCEED_LIMIT` | The project is at a limit of its plan. On Trial and Standard, once the month's API requests are used up, every call is refused until the month ends with `This project has used its 500,000 API requests for this month. Requests are refused until the month ends. Consider upgrading your plan.` (the number is the plan's own limit). See [Plans and Limits](https://docs.skapi.com/introduction/plans.html#api-requests). |
 | `ERROR` | Anything else. The message says what happened. |
 
@@ -101,4 +104,6 @@ When the coroutine that made a call is cancelled, the call throws `CancellationE
 
 ## Retries
 
-skapi-kotlin retries on its own when the server asks it to slow down (it waits as long as the server says, up to 6 times), and when a token refresh fails for lack of network (up to about 6 seconds). Other errors are thrown at once.
+skapi-kotlin retries on its own when the server asks it to slow down (it waits as long as the server says, up to 6 times), and when a token refresh fails for lack of network (up to about 6 seconds; a refresh gets 15 seconds in all). A poll of a forwarded request ([forwardRequestPoll](/api-reference/api-bridge#forwardrequestpoll), [forwardRequestStream](/api-reference/api-bridge#forwardrequeststream), or `forwardRequest` with `poll` or `stream`) keeps trying through `NETWORK_ERROR`, `TIMEOUT`, `RATE_LIMITED`, `TOO_MANY_REQUESTS`, `SERVER_ERROR` and token failures, waiting longer each time up to 30 seconds. Other errors are thrown at once.
+
+`NETWORK_ERROR`, `TIMEOUT`, `RATE_LIMITED`, `TOO_MANY_REQUESTS`, `SERVER_ERROR` and `ABORTED` say the request failed on the way, so trying again can work; any other code is the server's answer.

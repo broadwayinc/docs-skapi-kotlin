@@ -39,8 +39,8 @@ In the module's `build.gradle.kts` (Maven: see [Using from Java](/introduction/j
 
 ```kotlin
 dependencies {
-    implementation("com.skapi:skapi-kotlin:2.5.0")   // Java code: "com.skapi:skapi-java:2.5.0" instead
-    implementation("com.skapi:skapi-android:2.5.0")  // Android apps only
+    implementation("com.skapi:skapi-kotlin:2.7.0")   // Java code: "com.skapi:skapi-java:2.7.0" instead
+    implementation("com.skapi:skapi-android:2.7.0")  // Android apps only
 }
 
 val skapi = Skapi("<Project ID>")                    // Java: new SkapiJava("<Project ID>")

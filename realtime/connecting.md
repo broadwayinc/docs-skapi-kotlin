@@ -81,7 +81,7 @@ public static void main(String[] args) throws Exception {
 
 :::
 
-Calling `connectRealtime` again while connected only swaps the callback.
+Calling `connectRealtime` again while connected only swaps the callback. When the [request status push](/api-bridge/forward-request#status-push) opened the connection, connectRealtime takes it over; if that connection is still opening, it returns once it is open, or throws if it fails to open.
 
 ## Events
 
@@ -117,6 +117,8 @@ Every event is a `JsonObject`:
 | `"close"` | you closed the connection |
 
 Connection events (`success`, `error`, `reconnect`, `close`) carry only `type` and `message`.
+
+The server also sends a user's connections the status changes of their forwarded requests sent with `notify`. skapi-kotlin keeps those away from your callback; listen to them with [onRequestStatus](/api-reference/api-bridge#onrequeststatus).
 
 ## Staying connected
 

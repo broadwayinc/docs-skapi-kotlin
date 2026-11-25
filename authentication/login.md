@@ -103,7 +103,7 @@ System.out.println(skapi.getUser().get("user_id"));
 
 `getProfile(refreshToken = true)` asks the server for fresh tokens first, so the profile shows changes made elsewhere, for example on another device or by an admin. It returns `null` if the refresh fails. When the saved tokens had already expired and were just refreshed while the session was restored, that refresh is used: the server is asked once, not twice.
 
-skapi-kotlin refreshes the tokens on its own before a request when they have less than an hour left. One refresh runs at a time: other coroutines using the same object (and its realtime and keep-alive timers) wait for it and use the new tokens. If the network is down, the session stays and the request throws `NETWORK_ERROR`. The session ends only on logout, or when the server refuses the refresh (for example after a global logout).
+skapi-kotlin refreshes the tokens on its own before a request when they have less than an hour left. One refresh runs at a time: other coroutines using the same object (and its realtime and keep-alive timers) wait for it and use the new tokens. If the network is down, the session stays and the request throws `NETWORK_ERROR`. If the refresh gets no answer within 15 seconds (a connection that stalled after a sleep or a network change), the session stays too and the request throws `TIMEOUT` (`The sign-in token refresh did not answer within 15 seconds.`); the next request tries the refresh again. Treat both as "still signed in, try again later". The session ends only on logout, or when the server refuses the refresh (for example after a global logout).
 
 ## Staying signed in between runs
 

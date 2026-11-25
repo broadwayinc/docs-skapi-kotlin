@@ -48,7 +48,7 @@ The constructor is a plain (not `suspend`) call and sends nothing. The object co
 | `projectId` | `String` | the Project ID |
 | `service` | `String` | the project's service ID, read from the Project ID |
 | `owner` | `String` | the project owner's ID, read from the Project ID |
-| `version` | `String` | `"2.5.0"` (also the constant `SKAPI_VERSION`) |
+| `version` | `String` | `"2.7.0"` (also the constant `SKAPI_VERSION`) |
 | `user` | `JsonObject?` | the signed-in profile (a copy), or `null`. See [user](/api-reference/authentication#user). |
 | `session` | `SkapiSession?` | the signed-in session's tokens: `idToken`, `accessToken`, `refreshToken` (each a `String`), or `null` |
 
@@ -58,7 +58,8 @@ The constructor is a plain (not `suspend`) call and sends nothing. The object co
 |---|---|
 | `INVALID_PARAMETER` | `Project ID is required.` / `Project ID is invalid.` (thrown by the constructor) |
 | `INVALID_PARAMETER` | `"encryption.iterations" must be at least 100000.` (thrown by the constructor) |
-| `NOT_EXISTS` | `The project ID does not exist. Create your project from skapi.com` (thrown by the first call) |
+| `NOT_EXISTS` | `The project ID does not exist. Create your project from skapi.com` (thrown by the first call, when the CDN has no endpoint list for the project) |
+| `SERVER_ERROR`, `RATE_LIMITED`, `NETWORK_ERROR`, `TIMEOUT` | The first call could not read the project's endpoint list this time. Try again. |
 
 ## getConnectionInfo
 
@@ -84,7 +85,7 @@ The project's name and settings, and the caller as the server sees it. `refresh 
     "user_agent": "okhttp/4.12.0",
     "user_location": "KR",
     "service_name": "My Project",
-    "version": "2.5.0",
+    "version": "2.7.0",
     "conf": {"prevent_signup": false, "require_login": false, "anonymous_login": false, "...": "..."},
     "encryption_recovery": {"code": null, "message": "..."}
 }

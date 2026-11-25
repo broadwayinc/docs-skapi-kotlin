@@ -23,6 +23,8 @@ These can come from any method below that takes the input or needs the state.
 | `NETWORK_ERROR` | `Network error` | no answer came back |
 | `TIMEOUT` | `No response for <timeoutSeconds> seconds.` | nothing was sent or received for `timeoutSeconds` seconds |
 | `TOO_MANY_REQUESTS` | `Too many requests: ...` | still refused after 6 automatic retries |
+| `RATE_LIMITED` | `Too many requests` | the server asked to slow down without saying when to try again (`429` without `Retry-After`); for a file upload this is `TOO_MANY_REQUESTS` |
+| `SERVER_ERROR` | the server's message | a fault on the server (a `5xx` answer other than `501`); `details` holds what it sent |
 | `TIMEOUT` | `Upload timeout: ...` | a file upload stalled: nothing sent for `timeoutSeconds`, or no answer 5 × `timeoutSeconds` after it was sent |
 
 ## FetchOptions
